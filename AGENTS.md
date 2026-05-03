@@ -482,15 +482,21 @@ Reemplazar antes de cerrar Entrega 1:
 
 ## 16. Seguridad — SecurityConfig
 
-El `SecurityConfig` actual (desde issue #1 — scaffold) es **mínimo**: permite Swagger, H2 Console y Actuator sin autenticación; protege el resto con `anyRequest().authenticated()`.
+El `SecurityConfig` actual (implementado en issue #2) incluye: JWT filter, stateless session, rutas públicas de auth, y `AuthenticationEntryPoint` explícito para retornar 401.
 
-**El issue #2 (JWT + auth) lo expande** con: JWT filter, stateless session, rutas públicas de auth, y autorización fine-grained. No reemplazar el SecurityConfig del scaffold — extenderlo.
-
-Rutas públicas actuales:
+Rutas públicas:
+- `/auth/**`
 - `/swagger-ui/**`, `/swagger-ui.html`
 - `/v3/api-docs/**`
-- `/actuator/**`
+- `/actuator/health`
 - `/h2-console/**`
+
+**Gotcha crítico:** Spring Security 6 stateless sin `AuthenticationEntryPoint` explícito retorna **403** (no 401) para requests sin token. Siempre agregar:
+```java
+.exceptionHandling(ex -> ex
+    .authenticationEntryPoint((req, res, e) -> res.sendError(401, "Unauthorized"))
+)
+```
 
 ---
 
@@ -501,7 +507,7 @@ Rutas públicas actuales:
 | Issue | Título | Estado |
 |---|---|---|
 | #1 | Scaffold del proyecto | ✅ Mergeado a `develop` |
-| #2 | JWT + endpoints de autenticación | Pendiente |
+| #2 | JWT + endpoints de autenticación | 🔄 PR #9 abierto — pendiente merge |
 | #3 | Configuración Swagger v3 (OpenAPI 3) | Pendiente |
 | #4 | Catálogo de jugadores + DataInitializer | Pendiente |
 | #5 | Tests unitarios (Entrega 1) | Pendiente |
@@ -509,6 +515,7 @@ Rutas públicas actuales:
 
 **Ramas activas:**
 - `develop` — integración; base de las features
+- `feature/jwt-auth` — issue #2, PR #9 abierto
 - `entrega-1` — referencia del diseño original; **NO mergear**
 
 **`entrega-1` como código de referencia:**
@@ -523,6 +530,12 @@ La rama `entrega-1` contiene una implementación completa del proyecto en un ún
 - `application-test.yml` vive en `src/test/resources/` (no en `src/main/`)
 - CI activa perfil `test` con `-Dspring.profiles.active=test`
 - GitHub cierra issues automáticamente solo al mergear a `main`; cerrar manualmente al mergear a `develop`
+
+**Decisiones tomadas en issue #2 (2026-05-03):**
+- `User` no tiene campo `nombre` en Entrega 1 (solo `email`, `passwordHash`, `role`)
+- `JwtService` y `BCryptPasswordEncoder` se instancian directamente en tests unitarios (no `@Mock`) por incompatibilidad con Java 25 (ver §21)
+- `application-test.yml` incluye `jwt.secret` base64 para tests de integración
+- Colección Postman en `postman/bolsa-de-jugadores.postman_collection.json` — importar para smoke test manual
 
 ---
 
@@ -540,17 +553,19 @@ Cuando el dev escriba **"Iniciá el issue #N"**, el asistente ejecuta de forma a
 
 3. **Crear la rama:** `git checkout develop && git pull && git checkout -b feature/<área>` y pushear.
 
-4. **Crear PR en draft:** 
+4. **Plan de implementación (BARRERA):** Presentar al dev los archivos a crear/modificar y la lógica a implementar. **Esperar confirmación explícita** antes de escribir código.
+
+5. **Implementar:** Una vez aprobado el plan, desarrollar según las reglas de §15. El **primer commit** debe hacerse apenas hay algo compilable — aunque sea el esqueleto.
+
+6. **Crear PR en draft** (después del primer commit — `gh pr create` falla si no hay commits entre la feature branch y `develop`):
    ```
    gh pr create --draft --title "feat: <descripción>" --base develop --body "..."
    ```
    El body debe incluir referencia al issue (`Closes #N`) y secciones Summary / Test plan.
 
-5. **Plan de implementación (BARRERA):** Presentar al dev los archivos a crear/modificar y la lógica a implementar. **Esperar confirmación explícita** antes de escribir código.
+7. **Continuar implementación** hasta completar todos los criterios de aceptación. Correr `./mvnw verify -Dspring.profiles.active=test` antes de dar el trabajo por terminado.
 
-6. **Implementar:** Una vez aprobado el plan, desarrollar según las reglas de §15. Correr `./mvnw verify -Dspring.profiles.active=test` antes de dar el trabajo por terminado.
-
-7. **Marcar PR como ready:** `gh pr ready <número>` cuando el desarrollo esté completo y el CI en verde.
+8. **Marcar PR como ready:** `gh pr ready <número>` cuando el desarrollo esté completo y el CI en verde.
 
 ---
 
@@ -571,8 +586,58 @@ Recién después de ese commit el dev mergea el PR a `develop` y cierra el issue
 ## 20. Workflow completo por issue (resumen para el dev)
 
 ```
-"Iniciá el issue #N"   → el asistente crea rama, PR draft, propone plan
-[confirmás el plan]    → el asistente implementa y corre los tests
+"Iniciá el issue #N"   → el asistente crea rama, propone plan
+[confirmás el plan]    → el asistente implementa, hace primer commit, crea PR draft
+                       → continúa implementando hasta terminar y corre los tests
 "Cerrá el issue #N"    → el asistente actualiza AGENTS.md y commitea
 [mergeás el PR]        → cerrás el issue en GitHub
 ```
+
+---
+
+## 21. Gotchas descubiertos
+
+### gh CLI — errores GraphQL por deprecation de Projects (classic)
+
+`gh pr edit`, `gh issue view` y similares fallan con: `"Projects (classic) is being deprecated"` en repos con Projects v2.
+
+**Fix:** usar `gh api` REST en lugar de los comandos de alto nivel:
+```bash
+# En vez de gh issue view 2 --json title,body
+gh api repos/dddaavo/dapp-bolsa-de-jugadores/issues/2 --jq '{title:.title,body:.body}'
+
+# En vez de gh pr edit 9 --body "..."
+gh api repos/dddaavo/dapp-bolsa-de-jugadores/pulls/9 -X PATCH -f body='...'
+```
+
+### gh pr create — falla si no hay commits entre branches
+
+`gh pr create` falla con `"No commits between develop and feature/xxx"` si se ejecuta antes del primer commit en la feature branch.
+
+**Fix:** hacer al menos un commit antes de crear el PR draft. La rutina §18 ya refleja este orden corregido.
+
+### Java 25 + Mockito inline — no puede mockear clases concretas con JVM flags nuevos
+
+El sistema tiene JDK 25 instalado aunque el proyecto compile a Java 21 (`--release 21`). Mockito inline mock maker falla al intentar mockear `JwtService` o `BCryptPasswordEncoder`:
+```
+Could not modify all classes [class JwtService, class java.lang.Object]
+```
+
+**Fix:** en lugar de `@Mock JwtService`, instanciar directamente en el `@BeforeEach`:
+```java
+jwtService = new JwtService("dGVzdC1zZWNyZXQta2V5LWZvci11bml0LXRlc3Rpbmctb25seQ==", 15);
+passwordEncoder = new BCryptPasswordEncoder();
+```
+Aplica a cualquier clase concreta sin interfaz que Mockito no pueda subclasear. Solo mockear lo que tenga interfaz o sea heredable.
+
+### Spring Security 6 stateless — retorna 403 en vez de 401 sin AuthenticationEntryPoint
+
+En configuración stateless (`SessionCreationPolicy.STATELESS`) sin `AuthenticationEntryPoint` explícito, Spring Security 6 devuelve **403 Forbidden** para requests sin token en lugar del esperado **401 Unauthorized**.
+
+**Fix:** siempre agregar en el `SecurityFilterChain`:
+```java
+.exceptionHandling(ex -> ex
+    .authenticationEntryPoint((req, res, e) -> res.sendError(401, "Unauthorized"))
+)
+```
+Ver implementación en `config/SecurityConfig.java`.

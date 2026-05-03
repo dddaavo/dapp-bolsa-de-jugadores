@@ -404,18 +404,18 @@ Exponer `/actuator/prometheus`. Métricas custom: contador de órdenes, duració
 ## 13. Checklist por entrega
 
 ### Entrega 1
-- [ ] Repo GitHub + CI verde en `main`
-- [ ] SonarCloud registrado, issues < 10
-- [ ] JWT: `POST /auth/register` + `POST /auth/login`
-- [ ] Swagger v3 en `/swagger-ui.html` con `SecurityScheme` Bearer JWT
-- [ ] Scaffold Maven + Spring Boot 3.3 + Java 21
-- [ ] Entidades base: `User`, `Player`, `AuditableEntity`
-- [ ] H2 configurado en perfil `local`
-- [ ] Tests unitarios (al menos una clase de test por service)
-- [ ] `GET /api/v1/players` y `GET /api/v1/players/{id}`
-- [ ] `CODEOWNERS` y branch protection en `main`
-- [ ] README con badge de CI y sección "How to run"
-- [ ] Tag `v1.0.0` + Release Notes
+- [ ] Repo GitHub + CI verde en `main` — CI configurado y verde en `develop`; pendiente merge final a `main`
+- [ ] SonarCloud registrado, issues < 10 — issue #6
+- [ ] JWT: `POST /auth/register` + `POST /auth/login` — issue #2
+- [ ] Swagger v3 en `/swagger-ui.html` con `SecurityScheme` Bearer JWT — issue #3
+- [x] Scaffold Maven + Spring Boot 3.3 + Java 21
+- [ ] Entidades base: `User`, `Player`, `AuditableEntity` — issues #2 y #4
+- [x] H2 configurado en perfil `local`
+- [ ] Tests unitarios (al menos una clase de test por service) — issue #5
+- [ ] `GET /api/v1/players` y `GET /api/v1/players/{id}` — issue #4
+- [x] `CODEOWNERS` — branch protection en `main` pendiente (configurar en GitHub Settings)
+- [x] README con badge de CI y sección "How to run"
+- [ ] Tag `v1.0.0` + Release Notes — al cerrar todos los issues de E1
 
 ### Entrega 2
 - [ ] CI sin regresiones, H2 como DB principal

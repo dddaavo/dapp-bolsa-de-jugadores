@@ -526,11 +526,52 @@ La rama `entrega-1` contiene una implementación completa del proyecto en un ún
 
 ---
 
-## 18. Rutina de cierre de issue
+## 18. Rutina: "Iniciá el issue #N"
 
-Al mergear cada feature branch a `develop`, el asistente debe — sin que el dev lo pida explícitamente:
+Cuando el dev escriba **"Iniciá el issue #N"**, el asistente ejecuta de forma autónoma:
 
-1. Actualizar la tabla de estado en §17 (marcar el issue como mergeado).
-2. Registrar en §17 las decisiones relevantes tomadas durante el issue: gotchas, patrones nuevos, convenciones que surgieron.
-3. Si el issue introdujo una sección nueva de arquitectura o un patrón no documentado, agregarlo en la sección correspondiente de este archivo.
-4. Commitear la actualización del `AGENTS.md` en la misma rama antes del merge, con mensaje: `chore: actualiza estado del proyecto tras cierre de issue #N`.
+1. **Leer el issue:** `gh issue view N` — título, descripción, criterios de aceptación.
+
+2. **Análisis (BARRERA):** Cruzar el issue contra el enunciado (`§3`, `§4`) y el estado actual (`§17`). Identificar:
+   - Dependencias con issues anteriores no mergeados
+   - Gaps o ambigüedades en los requerimientos
+   - Decisiones de arquitectura que afecten más de un módulo
+   Si hay dudas → **DETENER y preguntar** antes de continuar.
+
+3. **Crear la rama:** `git checkout develop && git pull && git checkout -b feature/<área>` y pushear.
+
+4. **Crear PR en draft:** 
+   ```
+   gh pr create --draft --title "feat: <descripción>" --base develop --body "..."
+   ```
+   El body debe incluir referencia al issue (`Closes #N`) y secciones Summary / Test plan.
+
+5. **Plan de implementación (BARRERA):** Presentar al dev los archivos a crear/modificar y la lógica a implementar. **Esperar confirmación explícita** antes de escribir código.
+
+6. **Implementar:** Una vez aprobado el plan, desarrollar según las reglas de §15. Correr `./mvnw verify -Dspring.profiles.active=test` antes de dar el trabajo por terminado.
+
+7. **Marcar PR como ready:** `gh pr ready <número>` cuando el desarrollo esté completo y el CI en verde.
+
+---
+
+## 19. Rutina: "Cerrá el issue #N"
+
+Cuando el dev escriba **"Cerrá el issue #N"**, el asistente ejecuta antes del merge:
+
+1. Actualizar la tabla de estado en §17 (marcar como mergeado).
+2. Registrar en §17 las decisiones relevantes del issue: gotchas, patrones nuevos, convenciones.
+3. Si el issue introdujo arquitectura o patrones no documentados, agregar la sección correspondiente.
+4. Commitear en la feature branch con mensaje: `chore: actualiza estado del proyecto tras cierre de issue #N`.
+
+Recién después de ese commit el dev mergea el PR a `develop` y cierra el issue manualmente en GitHub.
+
+---
+
+## 20. Workflow completo por issue (resumen para el dev)
+
+```
+"Iniciá el issue #N"   → el asistente crea rama, PR draft, propone plan
+[confirmás el plan]    → el asistente implementa y corre los tests
+"Cerrá el issue #N"    → el asistente actualiza AGENTS.md y commitea
+[mergeás el PR]        → cerrás el issue en GitHub
+```

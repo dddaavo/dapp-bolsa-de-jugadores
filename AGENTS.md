@@ -640,3 +640,51 @@ En configuración stateless (`SessionCreationPolicy.STATELESS`) sin `Authenticat
 )
 ```
 Ver implementación en `config/SecurityConfig.java`.
+
+---
+
+## 22. Rutina: "Onboarding"
+
+Cuando un dev escriba **"Onboarding"** (o "cómo arranco", "quiero sumarme al proyecto"), el asistente ejecuta esta secuencia interactiva:
+
+1. **Verificar JDK 21:**
+   ```bash
+   java -version
+   ```
+   Si la versión no es 21, indicar que instale Temurin 21: https://adoptium.net
+
+2. **Verificar o instalar `gh` CLI:**
+   ```bash
+   gh --version
+   ```
+   Si no está instalado:
+   ```bash
+   # Ubuntu/Debian
+   sudo apt install gh
+   ```
+   Luego autenticar:
+   ```bash
+   gh auth login
+   # → GitHub.com → SSH → pegar fine-grained PAT
+   ```
+   El PAT necesita scopes `repo` + `workflow` (Issues: Read & Write). Verificar con `gh auth status`.
+
+3. **Clonar el repo y pararse en `develop`:**
+   ```bash
+   git clone git@github.com:dddaavo/dapp-bolsa-de-jugadores.git
+   cd dapp-bolsa-de-jugadores
+   git checkout develop
+   ```
+
+4. **Correr los tests para verificar que el entorno funciona:**
+   ```bash
+   ./mvnw verify -Dspring.profiles.active=test
+   ```
+   Debe terminar en `BUILD SUCCESS`. Si falla, revisar que el JDK activo sea 21 (`java -version`).
+
+5. **Importar la colección Postman:**
+   Abrir Postman → Import → seleccionar `postman/bolsa-de-jugadores.postman_collection.json`.
+
+6. **Leer el estado actual del proyecto** (§17) para ver qué issues están pendientes.
+
+7. **Listo.** Para arrancar con un issue: `Iniciá el issue #N`.

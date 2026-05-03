@@ -406,12 +406,12 @@ Exponer `/actuator/prometheus`. Métricas custom: contador de órdenes, duració
 ### Entrega 1
 - [ ] Repo GitHub + CI verde en `main` — CI configurado y verde en `develop`; pendiente merge final a `main`
 - [ ] SonarCloud registrado, issues < 10 — issue #6
-- [ ] JWT: `POST /auth/register` + `POST /auth/login` — issue #2
+- [x] JWT: `POST /auth/register` + `POST /auth/login` — issue #2 ✅
 - [ ] Swagger v3 en `/swagger-ui.html` con `SecurityScheme` Bearer JWT — issue #3
 - [x] Scaffold Maven + Spring Boot 3.3 + Java 21
-- [ ] Entidades base: `User`, `Player`, `AuditableEntity` — issues #2 y #4
+- [x] Entidades base: `User`, `Player`, `AuditableEntity` — `User` + `AuditableEntity` ✅ (issue #2); `Player` pendiente issue #4
 - [x] H2 configurado en perfil `local`
-- [ ] Tests unitarios (al menos una clase de test por service) — issue #5
+- [x] Tests unitarios (al menos una clase de test por service) — `AuthServiceTest` + `JwtServiceTest` ✅ (issue #2); cobertura ampliada en issue #5
 - [ ] `GET /api/v1/players` y `GET /api/v1/players/{id}` — issue #4
 - [x] `CODEOWNERS` — branch protection en `main` pendiente (configurar en GitHub Settings)
 - [x] README con badge de CI y sección "How to run"
@@ -507,7 +507,7 @@ Rutas públicas:
 | Issue | Título | Estado |
 |---|---|---|
 | #1 | Scaffold del proyecto | ✅ Mergeado a `develop` |
-| #2 | JWT + endpoints de autenticación | 🔄 PR #9 abierto — pendiente merge |
+| #2 | JWT + endpoints de autenticación | ✅ Mergeado a `develop` |
 | #3 | Configuración Swagger v3 (OpenAPI 3) | Pendiente |
 | #4 | Catálogo de jugadores + DataInitializer | Pendiente |
 | #5 | Tests unitarios (Entrega 1) | Pendiente |
@@ -515,7 +515,6 @@ Rutas públicas:
 
 **Ramas activas:**
 - `develop` — integración; base de las features
-- `feature/jwt-auth` — issue #2, PR #9 abierto
 - `entrega-1` — referencia del diseño original; **NO mergear**
 
 **`entrega-1` como código de referencia:**

@@ -34,3 +34,23 @@ Trabajo Práctico — Desarrollo de Aplicaciones, UNQ.
 # Integration tests + build completo
 ./mvnw verify -Dspring.profiles.active=test
 ```
+
+## Smoke test manual
+
+Importar `postman/bolsa-de-jugadores.postman_collection.json` en Postman. La colección tiene una variable `{{token}}` que se rellena automáticamente al ejecutar **POST /auth/login**.
+
+## Seguimiento
+
+- **Project board (Entrega 1):** https://github.com/users/dddaavo/projects/1
+- **Issues:** https://github.com/dddaavo/dapp-bolsa-de-jugadores/issues
+
+## Desarrollo con IA
+
+Este proyecto se desarrolla principalmente con asistentes de IA (Claude, Gemini, etc.). El archivo [`AGENTS.md`](AGENTS.md) es la fuente de verdad del proyecto para cualquier asistente: stack, arquitectura, convenciones y estado actual.
+
+Rutinas disponibles — escribirlas tal cual en el chat del asistente:
+
+- **`Iniciá el issue #N`** — crea la rama, propone el plan de implementación y desarrolla
+- **`Cerrá el issue #N`** — actualiza el estado en `AGENTS.md` antes del merge
+
+**Regla obligatoria:** cada cambio debe verificarse corriendo `./mvnw verify -Dspring.profiles.active=test` y, si hay comportamiento de API nuevo, probarse con la colección Postman antes de mergear.

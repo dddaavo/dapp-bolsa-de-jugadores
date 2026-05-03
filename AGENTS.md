@@ -95,7 +95,7 @@ com.unq.dapp.bolsa
 
 - `User { id, email (unique), passwordHash, role (USER|ADMIN), createdAt }`
 - `Player { id, externalId, name, position, team, league, nationality }`
-- `PlayerTokenInventory { playerId, totalEmitted=100, heldBySystem, @Version }`
+- `PlayerTokenInventory { playerId, totalEmitted=100, heldBySystem, initialTokenValue=1, @Version }` — valor inicial 1 crédito por token (definido en enunciado §3.3)
 - `Quote { id, playerId, value, calculatedAt, strategyName, strategyVersion }`
 - `PlayerMetricsSnapshot { id, playerId, periodStart, periodEnd, goals, assists, ... }`
 - `Order { id, userId, playerId, type (BUY|SELL), quantity, unitPrice, totalAmount, status, idempotencyKey, createdAt }`
@@ -114,9 +114,11 @@ Todas las entidades extienden `AuditableEntity { createdAt, updatedAt }`.
 
 ## 4. API (endpoints)
 
-Todos bajo `/api/v1`. Swagger UI en `/swagger-ui.html`, contrato en `/v3/api-docs`.
+El enunciado define los endpoints sin prefijo (`/players`, `/orders`, `/users`). Usamos `/api/v1` como prefijo por convención de buenas prácticas (versionado), no por requerimiento. Swagger UI en `/swagger-ui.html`, contrato en `/v3/api-docs`.
 
 ### Auth
+> Los endpoints de auth no están en la tabla del enunciado — son un requerimiento de la materia (API key para acceder al resto de endpoints).
+
 | Método | Path | Rol | Descripción |
 |---|---|---|---|
 | POST | `/auth/register` | público | Crea usuario USER, devuelve `{ accessToken, expiresIn }` |
@@ -417,7 +419,7 @@ Exponer `/actuator/prometheus`. Métricas custom: contador de órdenes, duració
 
 ### Entrega 2
 - [ ] CI sin regresiones, H2 como DB principal
-- [ ] `DataInitializer`: superusuario, 25+ jugadores, 4 usuarios, cotizaciones iniciales
+- [ ] `DataInitializer`: superusuario, 25+ jugadores (al menos uno por liga), 4 usuarios, cotizaciones iniciales — debe cubrir los escenarios de evaluación del enunciado §8: 4 usuarios + compra de 5 jugadores + evolución de cotizaciones por liga
 - [ ] Swagger v3 completo con `@Operation`, `@ApiResponse`, `@Schema`
 - [ ] Surefire + Failsafe separados; JaCoCo en CI
 - [ ] Sistema de cotización: al menos una `PricingStrategy`
@@ -507,7 +509,12 @@ Rutas públicas actuales:
 
 **Ramas activas:**
 - `develop` — integración; base de las features
-- `entrega-1` — referencia del diseño original; NO mergear
+- `entrega-1` — referencia del diseño original; **NO mergear**
+
+**`entrega-1` como código de referencia:**
+La rama `entrega-1` contiene una implementación completa del proyecto en un único commit. Puede usarse como referencia al trabajar en cualquier issue — hacer `git show entrega-1:ruta/al/archivo.java` para leer un archivo sin hacer checkout. El código no está garantizado como funcional al 100% ni sigue la estructura final acordada, pero es útil para no partir de cero en cada issue.
+
+**Board de seguimiento:** https://github.com/users/dddaavo/projects/1
 
 **Decisiones tomadas en sesión inicial (2026-05-03):**
 - `SecurityConfig` mínimo incluido en el scaffold; el issue #2 lo expande con JWT

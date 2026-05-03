@@ -1,5 +1,6 @@
 target/
 .env
+.claude/settings.local.json
 *.class
 .idea/
 *.iml

@@ -561,7 +561,8 @@ Cuando el dev escriba **"Cerrá el issue #N"**, el asistente ejecuta antes del m
 1. Actualizar la tabla de estado en §17 (marcar como mergeado).
 2. Registrar en §17 las decisiones relevantes del issue: gotchas, patrones nuevos, convenciones.
 3. Si el issue introdujo arquitectura o patrones no documentados, agregar la sección correspondiente.
-4. Commitear en la feature branch con mensaje: `chore: actualiza estado del proyecto tras cierre de issue #N`.
+4. Actualizar el checklist de §13: marcar `[x]` en todos los ítems que el issue haya completado, total o parcialmente. Si un ítem queda parcialmente cubierto, anotarlo con una nota inline.
+5. Commitear en la feature branch con mensaje: `chore: actualiza estado del proyecto tras cierre de issue #N`.
 
 Recién después de ese commit el dev mergea el PR a `develop` y cierra el issue manualmente en GitHub.
 

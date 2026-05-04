@@ -1,5 +1,6 @@
 package com.unq.dapp.bolsa.shared.error;
 
+import com.unq.dapp.bolsa.catalog.application.PlayerNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -30,6 +31,12 @@ public class ApiExceptionHandler {
     public ResponseEntity<ErrorResponse> handleDomain(DomainException ex) {
         return ResponseEntity.unprocessableEntity()
                 .body(new ErrorResponse(ex.getErrorCode(), ex.getMessage(), Instant.now()));
+    }
+
+    @ExceptionHandler(PlayerNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePlayerNotFound(PlayerNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse("PLAYER_NOT_FOUND", ex.getMessage(), Instant.now()));
     }
 
     @ExceptionHandler(BadCredentialsException.class)

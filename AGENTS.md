@@ -407,7 +407,7 @@ Exponer `/actuator/prometheus`. Métricas custom: contador de órdenes, duració
 - [ ] Repo GitHub + CI verde en `main` — CI configurado y verde en `develop`; pendiente merge final a `main`
 - [ ] SonarCloud registrado, issues < 10 — issue #6
 - [x] JWT: `POST /auth/register` + `POST /auth/login` — issue #2 ✅
-- [ ] Swagger v3 en `/swagger-ui.html` con `SecurityScheme` Bearer JWT — issue #3
+- [x] Swagger v3 en `/swagger-ui.html` con `SecurityScheme` Bearer JWT — issue #3 ✅ (anotaciones de `PlayerController` pendientes para issue #4)
 - [x] Scaffold Maven + Spring Boot 3.3 + Java 21
 - [x] Entidades base: `User`, `Player`, `AuditableEntity` — `User` + `AuditableEntity` ✅ (issue #2); `Player` pendiente issue #4
 - [x] H2 configurado en perfil `local`
@@ -508,7 +508,7 @@ Rutas públicas:
 |---|---|---|
 | #1 | Scaffold del proyecto | ✅ Mergeado a `develop` |
 | #2 | JWT + endpoints de autenticación | ✅ Mergeado a `develop` |
-| #3 | Configuración Swagger v3 (OpenAPI 3) | Pendiente |
+| #3 | Configuración Swagger v3 (OpenAPI 3) | ✅ Mergeado a `develop` |
 | #4 | Catálogo de jugadores + DataInitializer | Pendiente |
 | #5 | Tests unitarios (Entrega 1) | Pendiente |
 | #6 | SonarCloud — registro y quality gate | Pendiente |
@@ -535,6 +535,13 @@ La rama `entrega-1` contiene una implementación completa del proyecto en un ún
 - `JwtService` y `BCryptPasswordEncoder` se instancian directamente en tests unitarios (no `@Mock`) por incompatibilidad con Java 25 (ver §21)
 - `application-test.yml` incluye `jwt.secret` base64 para tests de integración
 - Colección Postman en `postman/bolsa-de-jugadores.postman_collection.json` — importar para smoke test manual
+
+**Decisiones tomadas en issue #3 (2026-05-03):**
+- `OpenApiConfig` en `config/` — bean `OpenAPI` con `SecurityScheme` Bearer JWT aplicado globalmente vía `SecurityRequirement`; no hace falta anotar cada endpoint con `@SecurityRequirement`
+- `springdoc-openapi-starter-webmvc-ui:2.5.0` ya estaba en `pom.xml` desde el scaffold; no requirió agregar dependencia
+- `@Schema` en records Java se anota en cada campo del record (no en la clase); la anotación a nivel de clase no es reconocida por springdoc
+- `sonar.exclusions` ampliado con `**/auth/api/**` y `**/shared/error/**` para excluir DTOs y excepciones del análisis
+- Anotaciones de `PlayerController` (`@Tag`, `@Operation`) pendientes para issue #4; Swagger funciona con los endpoints de auth ya anotados
 
 ---
 

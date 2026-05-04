@@ -46,7 +46,7 @@
           }
         },
         {
-          "name": "POST /auth/login",
+          "name": "POST /auth/login  ← guarda token automáticamente",
           "event": [
             {
               "listen": "test",
@@ -114,13 +114,98 @@
           }
         },
         {
-          "name": "GET /api/v1/players (con token)",
+          "name": "GET /api/v1/players — todos",
           "request": {
             "method": "GET",
             "header": [
               { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
-            "url": "{{baseUrl}}/api/v1/players"
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/players?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "players"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/v1/players — filtro por liga (LA_LIGA)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/players?league=LA_LIGA&page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "players"],
+              "query": [
+                { "key": "league", "value": "LA_LIGA" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/v1/players — filtro por posición (FW)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/players?position=FW&page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "players"],
+              "query": [
+                { "key": "position", "value": "FW" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/v1/players — filtro por equipo (Madrid)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/players?team=madrid&page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "players"],
+              "query": [
+                { "key": "team", "value": "madrid" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/v1/players/{id} — existente → 200",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/v1/players/1"
+          }
+        },
+        {
+          "name": "GET /api/v1/players/{id} — inexistente → 404",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/v1/players/9999"
           }
         }
       ]

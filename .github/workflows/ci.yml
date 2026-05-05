@@ -26,11 +26,7 @@ jobs:
         run: ./mvnw -B verify -Dspring.profiles.active=test
 
       - name: Analyze with SonarCloud
-        if: |
-          github.event_name == 'push' && (
-            github.ref == 'refs/heads/main' ||
-            github.ref == 'refs/heads/develop'
-          ) || github.event_name == 'pull_request'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

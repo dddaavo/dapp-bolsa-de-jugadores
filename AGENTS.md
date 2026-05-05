@@ -405,7 +405,7 @@ Exponer `/actuator/prometheus`. Métricas custom: contador de órdenes, duració
 
 ### Entrega 1
 - [ ] Repo GitHub + CI verde en `main` — CI configurado y verde en `develop`; pendiente merge final a `main`
-- [ ] SonarCloud registrado, issues < 10 — issue #6
+- [x] SonarCloud registrado, issues < 10 — issue #6 ✅ (projectKey=`dddaavo_dapp-bolsa-de-jugadores`, org=`dappgrupom`; Quality Gate personalizado necesario para < 80% coverage en E1)
 - [x] JWT: `POST /auth/register` + `POST /auth/login` — issue #2 ✅
 - [x] Swagger v3 en `/swagger-ui.html` con `SecurityScheme` Bearer JWT — issue #3 ✅ (anotaciones de `PlayerController` pendientes para issue #4)
 - [x] Scaffold Maven + Spring Boot 3.3 + Java 21
@@ -458,8 +458,8 @@ Exponer `/actuator/prometheus`. Métricas custom: contador de órdenes, duració
 
 Reemplazar antes de cerrar Entrega 1:
 
-- `sonar.projectKey` y `sonar.organization` en `sonar-project.properties`
-- Secrets en GitHub Actions: `SONAR_TOKEN`, `SONAR_PROJECT_KEY`, `SONAR_ORGANIZATION`
+- ~~`sonar.projectKey` y `sonar.organization` en `sonar-project.properties`~~ ✅ completado en issue #6
+- ~~Secrets en GitHub Actions: `SONAR_TOKEN`, `SONAR_PROJECT_KEY`, `SONAR_ORGANIZATION`~~ ✅ completado en issue #6
 - `FOOTBALL_DATA_API_KEY` (registrar gratis en football-data.org)
 - `JWT_SECRET` para prod — generar con `openssl rand -base64 64`, NO commitear
 - GitHub org/user en `CODEOWNERS` — completar con todos los integrantes del equipo
@@ -502,7 +502,7 @@ Rutas públicas:
 
 ## 17. Estado actual del proyecto
 
-**Última actualización:** 2026-05-03
+**Última actualización:** 2026-05-05
 
 | Issue | Título | Estado |
 |---|---|---|
@@ -511,7 +511,7 @@ Rutas públicas:
 | #3 | Configuración Swagger v3 (OpenAPI 3) | ✅ Mergeado a `develop` |
 | #4 | Catálogo de jugadores + DataInitializer | Pendiente |
 | #5 | Tests unitarios (Entrega 1) | Pendiente |
-| #6 | SonarCloud — registro y quality gate | Pendiente |
+| #6 | SonarCloud — registro y quality gate | ✅ Mergeado a `develop` |
 
 **Ramas activas:**
 - `develop` — integración; base de las features
@@ -540,8 +540,37 @@ La rama `entrega-1` contiene una implementación completa del proyecto en un ún
 - `OpenApiConfig` en `config/` — bean `OpenAPI` con `SecurityScheme` Bearer JWT aplicado globalmente vía `SecurityRequirement`; no hace falta anotar cada endpoint con `@SecurityRequirement`
 - `springdoc-openapi-starter-webmvc-ui:2.5.0` ya estaba en `pom.xml` desde el scaffold; no requirió agregar dependencia
 - `@Schema` en records Java se anota en cada campo del record (no en la clase); la anotación a nivel de clase no es reconocida por springdoc
-- `sonar.exclusions` ampliado con `**/auth/api/**` y `**/shared/error/**` para excluir DTOs y excepciones del análisis
+- `sonar.exclusions` ampliado con `**/auth/api/**` y `**/shared/error/**` para excluir DTOs y excepciones del an��lisis
 - Anotaciones de `PlayerController` (`@Tag`, `@Operation`) pendientes para issue #4; Swagger funciona con los endpoints de auth ya anotados
+
+**Decisiones tomadas en issue #6 (2026-05-05):**
+- `sonar.projectKey=dddaavo_dapp-bolsa-de-jugadores`, `sonar.organization=dappgrupom` — valores reales cargados en `sonar-project.properties` y en GitHub Secrets
+- SonarCloud analiza automáticamente los PRs (Automatic Analysis activado en la plataforma), independiente de la condición del CI
+- El step de SonarCloud en `ci.yml` solo corre en push a `main` — el análisis de PRs lo hace SonarCloud automáticamente
+- Quality Gate "Sonar way" requiere ≥ 80% cobertura en nuevo código — incompatible con Entrega 1. Crear Quality Gate personalizado en SonarCloud con umbral menor (ver §23)
+- `sonar.coverage.exclusions` ampliado con `**/domain/**`, `**/*Repository.java`, `**/shared/audit/**` para excluir entidades JPA, enums e interfaces Spring Data
+- JaCoCo 0.8.12 configurado en `pom.xml` con exclusiones equivalentes
+- `fetch-depth: 0` agregado en `ci.yml` (requerido por SonarCloud para análisis incremental correcto)
+- `JwtAuthFilter`: corregido bug real — token JWT malformado/expirado causaba HTTP 500; ahora se captura y devuelve 401
+- `ApiExceptionHandler`: parámetros `ex` usados con logging SLF4J (resuelve `java:S1172`)
+- `DomainException` + `PlayerNotFoundException`: `serialVersionUID` agregado (`java:S2057`)
+
+---
+
+## 23. SonarCloud — Quality Gate personalizado
+
+El Quality Gate "Sonar way" por defecto requiere **≥ 80% de cobertura en nuevo código**. Para Entrega 1 (y mientras no haya cobertura completa), crear un Quality Gate propio:
+
+1. SonarCloud → **Quality Gates** → **Create**
+2. Nombre: `bolsa-jugadores`
+3. Condiciones sugeridas para E1/E2:
+   - `Reliability Rating` ≤ A (sin bugs nuevos)
+   - `Security Rating` ≤ A (sin vulnerabilidades)
+   - `Maintainability Rating` ≤ A
+   - `Coverage on New Code` ≥ 50% *(ajustar según avance de tests)*
+4. Asignar al proyecto: **Administration → Quality Gate → bolsa-jugadores**
+
+**Valores actuales del proyecto:** `sonar.projectKey=dddaavo_dapp-bolsa-de-jugadores`, `sonar.organization=dappgrupom`
 
 ---
 
@@ -647,6 +676,29 @@ En configuración stateless (`SessionCreationPolicy.STATELESS`) sin `Authenticat
 )
 ```
 Ver implementación en `config/SecurityConfig.java`.
+
+### SonarCloud — Automatic Analysis analiza PRs aunque el CI no lo haga
+
+SonarCloud tiene una feature de "Automatic Analysis" que analiza PRs automáticamente desde GitHub, **independiente del step de CI**. Si el Quality Gate falla en un PR, aparece como check fallido aunque el step `Analyze with SonarCloud` en `ci.yml` tenga condición `refs/heads/main`.
+
+**Consecuencia:** el análisis de PRs lo hace SonarCloud por su cuenta; el step del CI es solo para el análisis de la rama `main` (full analysis con cobertura).
+
+**Fix para Quality Gate en PRs:** crear un Quality Gate personalizado en SonarCloud con umbral de cobertura realista para la etapa del proyecto (ver §23).
+
+### JwtAuthFilter — token JWT inválido causaba HTTP 500
+
+Sin try-catch en `doFilterInternal`, un token JWT malformado o expirado lanzaba `MalformedJwtException` que propagaba como 500 en lugar de 401.
+
+**Fix:** envolver la lógica de extracción en try-catch:
+```java
+try {
+    String username = jwtService.extractUsername(token);
+    // ... set authentication
+} catch (Exception ex) {
+    logger.debug("JWT inválido o expirado: {}", ex.getMessage());
+}
+filterChain.doFilter(request, response); // continúa → resultado: 401 por falta de auth
+```
 
 ---
 

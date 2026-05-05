@@ -27,12 +27,12 @@ jobs:
 
       - name: Analyze with SonarCloud
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ./mvnw -B sonar:sonar \
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} \
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
             -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
             -Dspring.profiles.active=test
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

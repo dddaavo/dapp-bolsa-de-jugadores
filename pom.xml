@@ -21,6 +21,8 @@
         <java.version>21</java.version>
         <jjwt.version>0.12.6</jjwt.version>
         <springdoc.version>2.5.0</springdoc.version>
+        <jacoco.version>0.8.12</jacoco.version>
+        <sonar.maven.version>4.0.0.4121</sonar.maven.version>
     </properties>
 
     <dependencies>
@@ -127,6 +129,41 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+
+            <!-- JaCoCo: cobertura para SonarCloud -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals><goal>prepare-agent</goal></goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals><goal>report</goal></goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <excludes>
+                        <exclude>**/auth/api/**</exclude>
+                        <exclude>**/catalog/api/**</exclude>
+                        <exclude>**/shared/error/**</exclude>
+                        <exclude>**/config/**</exclude>
+                        <exclude>**/DataInitializer.*</exclude>
+                        <exclude>**/BolsaApplication.*</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+
+            <!-- Sonar Maven Plugin -->
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>${sonar.maven.version}</version>
             </plugin>
         </plugins>
     </build>

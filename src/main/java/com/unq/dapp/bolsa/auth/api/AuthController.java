@@ -3,7 +3,6 @@ package com.unq.dapp.bolsa.auth.api;
 import com.unq.dapp.bolsa.auth.application.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -25,22 +24,18 @@ public class AuthController {
     }
 
     @Operation(summary = "Registrar nuevo usuario", description = "Crea un usuario con rol USER y devuelve un JWT")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Usuario creado"),
-            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
-            @ApiResponse(responseCode = "409", description = "Email ya registrado")
-    })
+    @ApiResponse(responseCode = "201", description = "Usuario creado")
+    @ApiResponse(responseCode = "400", description = "Datos inválidos")
+    @ApiResponse(responseCode = "409", description = "Email ya registrado")
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(req));
     }
 
     @Operation(summary = "Iniciar sesión", description = "Devuelve un JWT para el usuario autenticado")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Login exitoso"),
-            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
-            @ApiResponse(responseCode = "401", description = "Credenciales incorrectas")
-    })
+    @ApiResponse(responseCode = "200", description = "Login exitoso")
+    @ApiResponse(responseCode = "400", description = "Datos inválidos")
+    @ApiResponse(responseCode = "401", description = "Credenciales incorrectas")
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest req) {
         return ResponseEntity.ok(authService.login(req));

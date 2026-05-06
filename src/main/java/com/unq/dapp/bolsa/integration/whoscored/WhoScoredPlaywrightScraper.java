@@ -110,8 +110,7 @@ public class WhoScoredPlaywrightScraper implements PlayerStatsPort {
 
             Optional<Path> chromePath = findInstalledChrome();
             if (chromePath.isEmpty()) {
-                log.error("[WhoScored] No se encontró Chrome/Edge instalado. "
-                        + "Instalá Google Chrome o configurá CHROME_EXECUTABLE_PATH.");
+                log.error("[WhoScored] No se encontró Chrome/Edge instalado. Instalá Google Chrome o configurá CHROME_EXECUTABLE_PATH.");
                 return result;
             }
             log.info("[WhoScored] Usando browser en: {}", chromePath.get());
@@ -127,9 +126,10 @@ public class WhoScoredPlaywrightScraper implements PlayerStatsPort {
                     ));
 
             Browser.NewContextOptions contextOptions = new Browser.NewContextOptions()
-                    .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                            + "AppleWebKit/537.36 (KHTML, like Gecko) "
-                            + "Chrome/124.0.0.0 Safari/537.36")
+                    .setUserAgent("""
+                            Mozilla/5.0 (Windows NT 10.0; Win64; x64) \
+                            AppleWebKit/537.36 (KHTML, like Gecko) \
+                            Chrome/124.0.0.0 Safari/537.36""")
                     .setViewportSize(1280, 800)
                     .setLocale("en-US");
 
@@ -176,11 +176,12 @@ public class WhoScoredPlaywrightScraper implements PlayerStatsPort {
             }
         } catch (Exception e) {
             if (e.getMessage() != null && e.getMessage().contains("SELF_SIGNED_CERT")) {
-                log.error("[WhoScored] ERROR DE PROXY SSL — Playwright no puede descargar Chromium. "
-                        + "Ejecutá la app con la variable de entorno NODE_TLS_REJECT_UNAUTHORIZED=0:\n"
-                        + "  PowerShell: $env:NODE_TLS_REJECT_UNAUTHORIZED = '0'\n"
-                        + "  CMD:        set NODE_TLS_REJECT_UNAUTHORIZED=0\n"
-                        + "y luego corré de nuevo: .\\mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=local");
+                log.error("""
+                        [WhoScored] ERROR DE PROXY SSL — Playwright no puede descargar Chromium. \
+                        Ejecutá la app con la variable de entorno NODE_TLS_REJECT_UNAUTHORIZED=0:
+                          PowerShell: $env:NODE_TLS_REJECT_UNAUTHORIZED = '0'
+                          CMD:        set NODE_TLS_REJECT_UNAUTHORIZED=0
+                        y luego corré de nuevo: .\\mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=local""");
             } else {
                 log.error("[WhoScored] Scraping falló para {}: {}", league, e.getMessage());
             }
@@ -212,10 +213,11 @@ public class WhoScoredPlaywrightScraper implements PlayerStatsPort {
             env.put("NODE_TLS_REJECT_UNAUTHORIZED", "0");
             log.info("[WhoScored] NODE_TLS_REJECT_UNAUTHORIZED=0 inyectado via reflexión.");
         } catch (Exception e) {
-            log.warn("[WhoScored] Reflexión falló ({}). "
-                    + "Asegurate de que la JVM tenga: --add-opens java.base/java.lang=ALL-UNNAMED\n"
-                    + "  — En IntelliJ: Run Configuration → Modify options → VM options → agregar ese flag\n"
-                    + "  — O seteá la variable en Run Configuration → Environment variables: NODE_TLS_REJECT_UNAUTHORIZED=0",
+            log.warn("""
+                    [WhoScored] Reflexión falló ({}). \
+                    Asegurate de que la JVM tenga: --add-opens java.base/java.lang=ALL-UNNAMED
+                      — En IntelliJ: Run Configuration → Modify options → VM options → agregar ese flag
+                      — O seteá la variable en Run Configuration → Environment variables: NODE_TLS_REJECT_UNAUTHORIZED=0""",
                     e.getMessage());
         }
     }

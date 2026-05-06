@@ -1,8 +1,14 @@
 package com.unq.dapp.bolsa.catalog;
 
 import com.unq.dapp.bolsa.auth.api.AuthResponse;
+import com.unq.dapp.bolsa.catalog.domain.League;
+import com.unq.dapp.bolsa.catalog.domain.Player;
+import com.unq.dapp.bolsa.catalog.domain.Position;
+import com.unq.dapp.bolsa.catalog.infrastructure.PlayerRepository;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -14,6 +20,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 class PlayerIT {
@@ -24,7 +31,30 @@ class PlayerIT {
     @Autowired
     private TestRestTemplate restTemplate;
 
+    @Autowired
+    private PlayerRepository playerRepository;
+
     private String token;
+    private Long seededPlayerId;
+
+    @BeforeAll
+    void seedPlayers() {
+        Player haaland = new Player();
+        haaland.setName("Erling Haaland");
+        haaland.setPosition(Position.FW);
+        haaland.setTeam("Manchester City");
+        haaland.setLeague(League.PREMIER_LEAGUE);
+        haaland.setActive(true);
+        seededPlayerId = playerRepository.save(haaland).getId();
+
+        Player vini = new Player();
+        vini.setName("Vinícius Júnior");
+        vini.setPosition(Position.FW);
+        vini.setTeam("Real Madrid");
+        vini.setLeague(League.LA_LIGA);
+        vini.setActive(true);
+        playerRepository.save(vini);
+    }
 
     @BeforeEach
     void obtenerToken() {
@@ -59,7 +89,7 @@ class PlayerIT {
     @Test
     void deberiaRetornar200CuandoJugadorExiste() {
         ResponseEntity<String> response = restTemplate.exchange(
-                baseUrl() + "/api/v1/players/1",
+                baseUrl() + "/api/v1/players/" + seededPlayerId,
                 HttpMethod.GET, requestConToken(), String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);

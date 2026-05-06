@@ -4,10 +4,10 @@ import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.WaitUntilState;
 import com.unq.dapp.bolsa.catalog.domain.League;
 import com.unq.dapp.bolsa.catalog.domain.Position;
-import com.unq.dapp.bolsa.integration.port.PlayerStatsPort;
 import com.unq.dapp.bolsa.integration.port.ScrapedPlayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
 import java.nio.file.Path;
@@ -25,9 +25,6 @@ import java.util.regex.Pattern;
  * WhoScored renderiza sus tablas con JavaScript y usa Cloudflare como anti-bot,
  * por lo que Jsoup (HTTP plano) no funciona — se necesita un browser real.
  * <p>
- * Esta clase NO lleva @Component directamente: la instancia {@link WhoScoredAdapter}
- * (que sí es @Component) decide cuándo invocarla según la propiedad
- * {@code whoscored.scraping.enabled}.
  * <p>
  * Técnicas anti-detección aplicadas:
  * <ul>
@@ -37,7 +34,8 @@ import java.util.regex.Pattern;
  *   <li>Delay antes de extraer datos (simula lectura humana)</li>
  * </ul>
  */
-public class WhoScoredPlaywrightScraper implements PlayerStatsPort {
+@Component
+public class WhoScoredPlaywrightScraper implements WhoScoredScraper {
 
     private static final Logger log = LoggerFactory.getLogger(WhoScoredPlaywrightScraper.class);
 
@@ -86,7 +84,6 @@ public class WhoScoredPlaywrightScraper implements PlayerStatsPort {
             "C:/Program Files/Microsoft/Edge/Application/msedge.exe"
     );
 
-    @Override
     public List<ScrapedPlayer> fetchPlayersByLeague(League league) {
         String url = LEAGUE_STATS_URLS.get(league);
         log.info("[WhoScored] Iniciando scraping de {} — url: {}", league, url);

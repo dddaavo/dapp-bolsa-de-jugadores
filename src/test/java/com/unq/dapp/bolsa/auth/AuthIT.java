@@ -60,6 +60,17 @@ class AuthIT {
     }
 
     @Test
+    void requestConTokenMalformadoDevuelve401() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth("esto.no.es.un.jwt.valido");
+        ResponseEntity<String> response = restTemplate.exchange(
+                baseUrl() + "/api/v1/players", HttpMethod.GET,
+                new HttpEntity<>(headers), String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
     void requestConTokenValidoNoDevuelve401() {
         var body = Map.of("email", "auth@test.com", "password", "password123");
         ResponseEntity<AuthResponse> registerResponse = restTemplate.postForEntity(

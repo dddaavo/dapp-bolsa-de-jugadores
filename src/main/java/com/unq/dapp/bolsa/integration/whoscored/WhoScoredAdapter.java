@@ -15,9 +15,12 @@ public class WhoScoredAdapter implements PlayerStatsPort {
 
     private static final Logger log = LoggerFactory.getLogger(WhoScoredAdapter.class);
 
+    private final WhoScoredScraper scraper;
     private final boolean scrapingEnabled;
 
-    public WhoScoredAdapter(@Value("${whoscored.scraping.enabled:false}") boolean scrapingEnabled) {
+    public WhoScoredAdapter(WhoScoredScraper scraper,
+                            @Value("${whoscored.scraping.enabled:false}") boolean scrapingEnabled) {
+        this.scraper = scraper;
         this.scrapingEnabled = scrapingEnabled;
     }
 
@@ -30,7 +33,6 @@ public class WhoScoredAdapter implements PlayerStatsPort {
 
         log.info("[WhoScoredAdapter] Iniciando scraping para {}", league);
         try {
-            WhoScoredPlaywrightScraper scraper = new WhoScoredPlaywrightScraper();
             List<ScrapedPlayer> players = scraper.fetchPlayersByLeague(league);
             if (players.isEmpty()) {
                 log.warn("[WhoScoredAdapter] Scraper devolvió 0 jugadores para {}", league);

@@ -24,6 +24,10 @@
         <jacoco.version>0.8.12</jacoco.version>
         <sonar.maven.version>4.0.0.4121</sonar.maven.version>
         <sonar.organization>dappgrupom</sonar.organization>
+        <sonar.coverage.exclusions>
+            **/config/**,**/auth/api/**,**/catalog/api/**,**/shared/error/**,
+            **/DataInitializer.java,**/BolsaApplication.java,**/WhoScoredPlaywrightScraper.java
+        </sonar.coverage.exclusions>
     </properties>
 
     <dependencies>

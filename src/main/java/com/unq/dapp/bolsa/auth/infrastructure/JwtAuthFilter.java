@@ -19,7 +19,7 @@ import java.io.IOException;
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    private static final Logger logger = LoggerFactory.getLogger(JwtAuthFilter.class);
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
 
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
@@ -53,7 +53,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 }
             }
         } catch (Exception ex) {
-            logger.debug("JWT inválido o expirado: {}", ex.getMessage());
+            log.debug("JWT inválido o expirado: {}", ex.getMessage());
         }
 
         filterChain.doFilter(request, response);

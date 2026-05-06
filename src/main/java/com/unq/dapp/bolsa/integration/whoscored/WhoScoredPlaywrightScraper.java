@@ -126,18 +126,16 @@ public class WhoScoredPlaywrightScraper implements PlayerStatsPort {
                             "--disable-gpu"
                     ));
 
-            try (Browser browser = playwright.chromium().launch(launchOpts)) {
+            Browser.NewContextOptions contextOptions = new Browser.NewContextOptions()
+                    .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                            + "AppleWebKit/537.36 (KHTML, like Gecko) "
+                            + "Chrome/124.0.0.0 Safari/537.36")
+                    .setViewportSize(1280, 800)
+                    .setLocale("en-US");
 
-                BrowserContext context = browser.newContext(
-                        new Browser.NewContextOptions()
-                                .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                                        + "AppleWebKit/537.36 (KHTML, like Gecko) "
-                                        + "Chrome/124.0.0.0 Safari/537.36")
-                                .setViewportSize(1280, 800)
-                                .setLocale("en-US")
-                );
-
-                Page page = context.newPage();
+            try (Browser browser = playwright.chromium().launch(launchOpts);
+                 BrowserContext context = browser.newContext(contextOptions);
+                 Page page = context.newPage()) {
 
                 // Ocultar el flag que delata al headless browser
                 page.addInitScript(

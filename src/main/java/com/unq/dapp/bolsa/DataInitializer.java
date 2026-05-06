@@ -10,6 +10,7 @@ import com.unq.dapp.bolsa.integration.port.PlayerStatsPort;
 import com.unq.dapp.bolsa.integration.port.ScrapedPlayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,15 +29,18 @@ public class DataInitializer implements ApplicationRunner {
     private final PlayerRepository playerRepository;
     private final PasswordEncoder passwordEncoder;
     private final PlayerStatsPort playerStatsPort;
+    private final String adminPassword;
 
     public DataInitializer(UserRepository userRepository,
                            PlayerRepository playerRepository,
                            PasswordEncoder passwordEncoder,
-                           PlayerStatsPort playerStatsPort) {
+                           PlayerStatsPort playerStatsPort,
+                           @Value("${app.seed.admin-password}") String adminPassword) {
         this.userRepository = userRepository;
         this.playerRepository = playerRepository;
         this.passwordEncoder = passwordEncoder;
         this.playerStatsPort = playerStatsPort;
+        this.adminPassword = adminPassword;
     }
 
     @Override
@@ -50,7 +54,7 @@ public class DataInitializer implements ApplicationRunner {
         if (!userRepository.existsByEmail("system@bolsa.local")) {
             User admin = new User();
             admin.setEmail("system@bolsa.local");
-            admin.setPasswordHash(passwordEncoder.encode("admin1234"));
+            admin.setPasswordHash(passwordEncoder.encode(adminPassword));
             admin.setRole(Role.ADMIN);
             userRepository.save(admin);
         }

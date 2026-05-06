@@ -25,3 +25,10 @@ springdoc:
 jwt:
   secret: ${JWT_SECRET:ZGV2LXNlY3JldC1rZXktcGxlYXNlLWNoYW5nZS1pbi1wcm9kdWN0aW9uLXRoaXMtaXMtZGV2LW9ubHk=}
   access-ttl-minutes: ${JWT_ACCESS_TTL_MINUTES:15}
+
+# Scraping WhoScored — desactivado por defecto para no romper CI ni startup en test
+# Activar en local sobreescribiendo con: whoscored.scraping.enabled=true
+whoscored:
+  scraping:
+    enabled: ${WHOSCORED_SCRAPING_ENABLED:false}
+

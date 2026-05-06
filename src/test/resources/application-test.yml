@@ -16,3 +16,10 @@ logging:
   level:
     root: WARN
     com.unq.dapp.bolsa: WARN
+
+# Scraping siempre desactivado en tests: evita que Playwright intente
+# descargar Chromium y que los tests dependan de red externa
+whoscored:
+  scraping:
+    enabled: false
+

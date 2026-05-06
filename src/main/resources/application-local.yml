@@ -15,3 +15,10 @@ spring:
 logging:
   level:
     com.unq.dapp.bolsa: DEBUG
+
+# Activar scraping real de WhoScored solo en local (Playwright + Chromium headless)
+# Cambiar a true para obtener datos reales; false usa datos estáticos del fallback
+whoscored:
+  scraping:
+    enabled: false
+

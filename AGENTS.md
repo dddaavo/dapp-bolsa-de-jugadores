@@ -27,7 +27,7 @@ Backend REST en Java/Spring Boot que modela un mercado de tokens de jugadores de
 | API Docs | **springdoc-openapi 2.5.x (OpenAPI 3)** | Swagger UI y `/v3/api-docs` automáticos |
 | HTTP client | **Spring `RestClient`** (Spring 6.1+) | Sync, fluent, reemplazo moderno de RestTemplate |
 | Resiliencia | **Resilience4j** (circuit breaker + retry + bulkhead) | Tolerancia a fallas del proveedor externo |
-| Scraping | **Jsoup** (+ **Playwright/Selenium** solo si Jsoup no alcanza) | WhoScored tiene anti-bot: adapter con fallback a fixtures |
+| Scraping | **Playwright Java** (Chromium headless) | WhoScored usa Cloudflare + JS rendering; Jsoup no funciona (declarado en pom.xml pero sin uso real) |
 | Caché | **Caffeine** (Spring Cache abstraction) | In-process, TTL configurable, sin infraestructura extra |
 | Scheduler | **Spring `@Scheduled`** (+ **ShedLock** si escalamos a N>1 instancias) | Cotización semanal, sync externo |
 | Mapeo | **MapStruct** | DTO ↔ Entity en compile-time, sin reflection |
@@ -377,10 +377,13 @@ Configuración en `StrategyConfig` (JSON en columna TEXT — no JSONB, incompati
 
 | Fuente | Uso | Librería | Tolerancia |
 |---|---|---|---|
-| Football-Data.org | resultados, fixtures | `RestClient` | Resilience4j retry 3x + circuit breaker |
-| WhoScored | stats detalladas | Jsoup → Playwright | Circuit breaker + fallback a fixtures JSON |
+| Football-Data.org | resultados, fixtures (E3) | `RestClient` | Resilience4j retry 3x + circuit breaker |
+| WhoScored | catálogo de jugadores (E1) + stats de rendimiento (E2+) | Playwright Java | Fallback a `WhoScoredFixturesFallback` (datos estáticos) |
 
-`CompositePlayerStatsAdapter` decide la fuente. Todo dato externo se persiste en `PlayerMetricsSnapshot` — la cotización nunca pega a la API en el request path.
+**Flujo de inicialización del catálogo (implementado en E1):**
+`DataInitializer` → `PlayerStatsPort` → `WhoScoredAdapter` (@Primary) → `WhoScoredPlaywrightScraper` (si `whoscored.scraping.enabled=true`) o `WhoScoredFixturesFallback`. Los datos se persisten en `Player` al startup si la tabla está vacía (idempotente).
+
+**Scraper WhoScored:** extrae hasta 10 jugadores por liga (primera página de la tabla de estadísticas). Para más jugadores se necesita implementar paginación via botón "Next" (pendiente E2). La nationality no se extrae desde esta vista — queda vacía.
 
 ---
 
@@ -409,17 +412,18 @@ Exponer `/actuator/prometheus`. Métricas custom: contador de órdenes, duració
 - [x] JWT: `POST /auth/register` + `POST /auth/login` — issue #2 ✅
 - [x] Swagger v3 en `/swagger-ui.html` con `SecurityScheme` Bearer JWT — issue #3 ✅ (anotaciones de `PlayerController` pendientes para issue #4)
 - [x] Scaffold Maven + Spring Boot 3.3 + Java 21
-- [x] Entidades base: `User`, `Player`, `AuditableEntity` — `User` + `AuditableEntity` ✅ (issue #2); `Player` pendiente issue #4
+- [x] Entidades base: `User`, `Player`, `AuditableEntity` ✅
 - [x] H2 configurado en perfil `local`
 - [x] Tests unitarios (al menos una clase de test por service) — `AuthServiceTest` + `JwtServiceTest` ✅ (issue #2); cobertura ampliada en issue #5
-- [ ] `GET /api/v1/players` y `GET /api/v1/players/{id}` — issue #4
+- [x] `GET /api/v1/players` y `GET /api/v1/players/{id}` — endpoint funcional ✅; anotaciones OpenAPI (`@Tag`, `@Operation`) pendientes para cierre formal de issue #4
+- [x] `DataInitializer`: superusuario ADMIN ✅; 50 jugadores reales via scraping WhoScored ✅; 4 usuarios de prueba pendientes (issue #4)
 - [x] `CODEOWNERS` — branch protection en `main` pendiente (configurar en GitHub Settings)
 - [x] README con badge de CI y sección "How to run"
 - [ ] Tag `v1.0.0` + Release Notes — al cerrar todos los issues de E1
 
 ### Entrega 2
 - [ ] CI sin regresiones, H2 como DB principal
-- [ ] `DataInitializer`: superusuario, 25+ jugadores (al menos uno por liga), 4 usuarios, cotizaciones iniciales — debe cubrir los escenarios de evaluación del enunciado §8: 4 usuarios + compra de 5 jugadores + evolución de cotizaciones por liga
+- [ ] `DataInitializer`: 4 usuarios de prueba + cotizaciones iniciales — los 50 jugadores ya están (ver E1); completar escenario §8: 4 usuarios + compra de 5 jugadores + evolución de cotizaciones por liga
 - [ ] Swagger v3 completo con `@Operation`, `@ApiResponse`, `@Schema`
 - [ ] Surefire + Failsafe separados; JaCoCo en CI
 - [ ] Sistema de cotización: al menos una `PricingStrategy`
@@ -502,14 +506,14 @@ Rutas públicas:
 
 ## 17. Estado actual del proyecto
 
-**Última actualización:** 2026-05-05
+**Última actualización:** 2026-05-06
 
 | Issue | Título | Estado |
 |---|---|---|
 | #1 | Scaffold del proyecto | ✅ Mergeado a `develop` |
 | #2 | JWT + endpoints de autenticación | ✅ Mergeado a `develop` |
 | #3 | Configuración Swagger v3 (OpenAPI 3) | ✅ Mergeado a `develop` |
-| #4 | Catálogo de jugadores + DataInitializer | Pendiente |
+| #4 | Catálogo de jugadores + DataInitializer | 🔶 En progreso — scraping + endpoints funcionales; faltan anotaciones OpenAPI y 4 usuarios de prueba |
 | #5 | Tests unitarios (Entrega 1) | Pendiente |
 | #6 | SonarCloud — registro y quality gate | ✅ Mergeado a `develop` |
 
@@ -542,6 +546,20 @@ La rama `entrega-1` contiene una implementación completa del proyecto en un ún
 - `@Schema` en records Java se anota en cada campo del record (no en la clase); la anotación a nivel de clase no es reconocida por springdoc
 - `sonar.exclusions` ampliado con `**/auth/api/**` y `**/shared/error/**` para excluir DTOs y excepciones del an��lisis
 - Anotaciones de `PlayerController` (`@Tag`, `@Operation`) pendientes para issue #4; Swagger funciona con los endpoints de auth ya anotados
+
+**Decisiones tomadas en sesión de scraping WhoScored (2026-05-05/06) — parte de issue #4:**
+- Scraping implementado con Playwright Java (no Jsoup — WhoScored usa Cloudflare + JS rendering)
+- Arquitectura: `WhoScoredAdapter` (@Primary) orquesta entre `WhoScoredPlaywrightScraper` y `WhoScoredFixturesFallback`
+- `WhoScoredPlaywrightScraper` no es @Component — se instancia manualmente desde el adapter cuando `whoscored.scraping.enabled=true`
+- `DataInitializer` es idempotente: si `playerRepository.count() > 0` no hace nada
+- Scraping desactivado por defecto en todos los perfiles (`whoscored.scraping.enabled=false`); activar vía env var `WHOSCORED_SCRAPING_ENABLED=true` en Run Config de IntelliJ
+- Env vars recomendadas en Run Config local: `WHOSCORED_SCRAPING_ENABLED=true`, `NODE_TLS_REJECT_UNAUTHORIZED=0`, `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`
+- Chrome del sistema en `/usr/bin/google-chrome` (Linux); se configura via `CHROME_EXECUTABLE_PATH` para override
+- Resultado típico: ~10 jugadores por liga (50 total) — primera página de WhoScored; paginación pendiente para E2
+- `nationality` no se extrae desde la vista de estadísticas de liga — queda vacía; se populará desde perfil individual en E2
+- `Position` y `League` tienen campo `label` descriptivo (Goalkeeper, Premier League, etc.) — BD persiste el `name()` del enum
+- Decisión: NO usar Python para scraping (overhead de deployment, interfaz string-based, doble runtime); todo en Java con Playwright
+- Decisión: Football-Data.org free tier no da acceso a `/competitions/{id}/teams` — WhoScored cubre el catálogo para E1
 
 **Decisiones tomadas en issue #6 (2026-05-05):**
 - `sonar.projectKey=dddaavo_dapp-bolsa-de-jugadores`, `sonar.organization=dappgrupom` — valores reales cargados en `sonar-project.properties` y en GitHub Secrets
@@ -684,6 +702,50 @@ SonarCloud tiene una feature de "Automatic Analysis" que analiza PRs automática
 **Consecuencia:** el análisis de PRs lo hace SonarCloud por su cuenta; el step del CI es solo para el análisis de la rama `main` (full analysis con cobertura).
 
 **Fix para Quality Gate en PRs:** crear un Quality Gate personalizado en SonarCloud con umbral de cobertura realista para la etapa del proyecto (ver §23).
+
+### WhoScored — selectores CSS cambian entre temporadas
+
+El DOM de WhoScored cambia cada temporada. Los selectores originales (`tr.player-table-statistics`, `data-player-id`, `td.pn`, `td.tname`, `td.pos`) quedaron obsoletos. Selectores actuales (temporada 2024/25):
+
+- Filas: `#player-table-statistics-body tr` (sin clase específica)
+- ID del jugador: regex sobre `href` del `a.player-link` → `/players/(\d+)/`
+- Nombre: `td.overflow-text a.player-link span.iconize` → innerText
+- Equipo: `td.overflow-text span.team-name` → innerText sin la coma final
+- Posición: último `span.player-meta-data` dentro de `td.overflow-text` → formato `",  D(L),M(CLR)  "`
+
+**Cada inicio de temporada revisar el DOM con DevTools** — inspeccionar una fila de la tabla y verificar que los selectores sigan siendo válidos.
+
+### WhoScored — formato de posición con paréntesis y múltiples valores
+
+Las posiciones ya no son simples (`FW`, `MF`) sino con zona y lado: `D(L),M(CLR)`, `AM(CLR),FW`, `DMC`.
+
+**Regla de mapeo:** tomar la primera posición (`split(",")[0]`), eliminar el sufijo entre paréntesis (`replaceAll("\\(.*?\\)", "")`), aplicar:
+- `GK` → GK
+- `DM*`, `M*`, `AM*` → MF (verificar `DM` antes de `D` para no mapear defensivos medios a DF)
+- `D*`, `SW` → DF
+- resto → FW
+
+**Limitación conocida:** extremos como Bukayo Saka quedan mapeados como DF porque WhoScored les asigna `D(L)` por su posición real en el campo. El mapeo es una simplificación aceptable para E1.
+
+### WhoScored — 10 jugadores por página, sin dropdown
+
+WhoScored muestra exactamente 10 jugadores por página. **No existe un dropdown** para cambiar ese límite. Para obtener más jugadores hay que implementar paginación via el botón "Next" del DOM (pendiente E2).
+
+### Playwright Java — descarga Firefox y WebKit al inicializar
+
+`Playwright.create()` descarga todos los browsers a `~/.cache/ms-playwright/` la primera vez, aunque el proyecto use solo Chrome del sistema. Agregar `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` como env var evita las descargas innecesarias (~170MB).
+
+### Playwright Java — nueva instancia de browser por cada liga
+
+`WhoScoredPlaywrightScraper` se instancia por cada llamada a `fetchPlayersByLeague`. Esto crea un proceso Chrome nuevo por liga (5 en total al startup). Es ineficiente pero aceptable para E1. En E2, cuando haya sync periódico, conviene refactorizar para reutilizar una sola sesión.
+
+### H2 in-memory — no accesible desde IntelliJ Database tool
+
+Conectar IntelliJ al datasource `jdbc:h2:mem:bolsadb` abre una instancia H2 nueva y vacía, separada de la que usa Spring Boot. **Fix:** usar la H2 Console integrada en http://localhost:8080/h2-console mientras la app esté corriendo. Alternativa: cambiar a `jdbc:h2:file:./data/bolsadb` en `application-local.yml` para persistencia en archivo.
+
+### WhoScored — LA_LIGA timeout intermitente
+
+La URL de La Liga tiende a tardar más que las otras en cargar (Cloudflare throttling). Con timeout de 45s a veces falla y activa el fallback estático. Si es recurrente, aumentar el timeout de esa liga específicamente o agregar retry.
 
 ### JwtAuthFilter — token JWT inválido causaba HTTP 500
 

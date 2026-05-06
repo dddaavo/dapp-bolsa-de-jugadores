@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Scraper de WhoScored usando Playwright (Chromium headless).
@@ -61,17 +63,25 @@ public class WhoScoredPlaywrightScraper implements PlayerStatsPort {
     private static final int MAX_PLAYERS_PER_LEAGUE = 20;
 
     /**
-     * Rutas donde Chrome suele estar instalado en Windows.
-     * Playwright usa estas rutas cuando PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD está activo
-     * o cuando la descarga de Chromium falla por un proxy corporativo con SSL inspection.
+     * Rutas donde Chrome/Chromium suele estar instalado según el SO.
+     * Playwright usa estas rutas cuando se quiere usar el browser del sistema
+     * en lugar del Chromium bundleado por Playwright.
      */
     private static final List<String> CHROME_PATHS = List.of(
+            // Linux
+            "/usr/bin/google-chrome",
+            "/usr/bin/google-chrome-stable",
+            "/usr/bin/chromium-browser",
+            "/usr/bin/chromium",
+            "/snap/bin/chromium",
+            // macOS
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+            "/Applications/Chromium.app/Contents/MacOS/Chromium",
+            // Windows
             "C:/Program Files/Google/Chrome/Application/chrome.exe",
             "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
             System.getProperty("user.home") + "/AppData/Local/Google/Chrome/Application/chrome.exe",
-            // Chromium alternativo
             "C:/Program Files/Chromium/Application/chrome.exe",
-            // Edge (basado en Chromium, funciona con Playwright)
             "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
             "C:/Program Files/Microsoft/Edge/Application/msedge.exe"
     );
@@ -149,11 +159,8 @@ public class WhoScoredPlaywrightScraper implements PlayerStatsPort {
                 page.waitForSelector("#player-table-statistics-body",
                         new Page.WaitForSelectorOptions().setTimeout(20_000));
 
-                // Pausa breve para que terminen de cargar los datos de la tabla
-                page.waitForTimeout(3000);
-
                 List<ElementHandle> rows = page.querySelectorAll(
-                        "#player-table-statistics-body tr.player-table-statistics"
+                        "#player-table-statistics-body tr"
                 );
                 log.info("[WhoScored] {} filas encontradas para {}", rows.size(), league);
 
@@ -240,36 +247,46 @@ public class WhoScoredPlaywrightScraper implements PlayerStatsPort {
     /**
      * Parsea una fila {@code <tr>} de la tabla de jugadores de WhoScored.
      *
-     * <p>Estructura esperada de la fila (simplificada):
-     * <pre>
-     *   td.pn   → número de posición en el ranking
-     *   td.pi   → contiene <a class="player-link"> con el nombre
-     *   td.tname → contiene <a class="team-link"> con el equipo
-     *   td.pos  → posición abreviada (FW, MF, DF, GK)
-     *   data-player-id → ID interno de WhoScored
-     * </pre>
+     * Estructura actual del DOM (puede cambiar con temporadas):
+     * - El ID del jugador está en el href del player-link: /players/{id}/show/{slug}
+     * - El nombre está en span.iconize dentro del a.player-link del td.overflow-text
+     * - El equipo está en span.team-name (con coma al final que se elimina)
+     * - La posición está en el último span.player-meta-data, formato: ",  D(L),M(CLR)  "
+     * - La fila duplicada (td.grid-ghost-cell) se ignora acotando queries a td.overflow-text
      */
+    private static final Pattern PLAYER_ID_PATTERN = Pattern.compile("/players/(\\d+)/");
+
     private ScrapedPlayer parseRow(ElementHandle row, League league) {
-        // ID interno de WhoScored
-        String whoScoredId = row.getAttribute("data-player-id");
+        ElementHandle mainTd = row.querySelector("td.overflow-text");
+        if (mainTd == null) return null;
 
-        // Nombre del jugador
-        ElementHandle nameEl = row.querySelector("td.pn a.player-link");
-        if (nameEl == null) return null;
-        String name = nameEl.innerText().trim();
+        ElementHandle playerLink = mainTd.querySelector("a.player-link");
+        if (playerLink == null) return null;
 
-        // Equipo
+        String href = playerLink.getAttribute("href");
+        if (href == null || href.isBlank()) return null;
+        Matcher m = PLAYER_ID_PATTERN.matcher(href);
+        String whoScoredId = m.find() ? m.group(1) : "";
+
+        String name = "";
+        ElementHandle nameSpan = playerLink.querySelector("span.iconize");
+        if (nameSpan != null) {
+            name = nameSpan.innerText().trim();
+        }
+        if (name.isEmpty()) return null;
+
         String team = "";
-        ElementHandle teamEl = row.querySelector("td.tname a.team-link");
-        if (teamEl != null) {
-            team = teamEl.innerText().trim();
+        ElementHandle teamSpan = mainTd.querySelector("span.team-name");
+        if (teamSpan != null) {
+            team = teamSpan.innerText().trim().replaceAll(",\\s*$", "");
         }
 
-        // Posición (WhoScored usa: FW, AM, MF, DF, GK, etc.)
+        // Último span.player-meta-data contiene la posición: ",  D(L),M(CLR)  "
         String posText = "";
-        ElementHandle posEl = row.querySelector("td.pos");
-        if (posEl != null) {
-            posText = posEl.innerText().trim();
+        List<ElementHandle> metaSpans = mainTd.querySelectorAll("span.player-meta-data");
+        if (!metaSpans.isEmpty()) {
+            String raw = metaSpans.get(metaSpans.size() - 1).innerText().trim();
+            posText = raw.replaceAll("^[,\\s]+", "").trim();
         }
 
         return new ScrapedPlayer(whoScoredId, name, team, mapPosition(posText), league, "");
@@ -277,15 +294,21 @@ public class WhoScoredPlaywrightScraper implements PlayerStatsPort {
 
     /**
      * Mapea el código de posición de WhoScored al enum {@link Position}.
-     * WhoScored puede devolver: GK, DC, DR, DL (defensas), MC, ML, MR, AMC, AML, AMR, FW, SS
+     *
+     * WhoScored ahora usa formatos con paréntesis y múltiples posiciones:
+     * "D(L),M(CLR)", "AM(CLR),FW", "DMC", "FW", "GK"
+     * Se toma la primera posición y se elimina el sufijo entre paréntesis.
+     * DMC (defensive mid) se verifica antes de D(efender) para evitar mismatch.
      */
     private Position mapPosition(String posCode) {
         if (posCode == null || posCode.isEmpty()) return Position.FW;
-        String pos = posCode.toUpperCase();
-        if (pos.startsWith("GK"))                       return Position.GK;
-        if (pos.startsWith("D") || pos.startsWith("SW")) return Position.DF;
-        if (pos.startsWith("M") || pos.startsWith("AM")) return Position.MF;
-        return Position.FW; // FW, SS, AML sobre la línea atacante
+        String first = posCode.split(",")[0].trim();
+        String base = first.replaceAll("\\(.*?\\)", "").trim().toUpperCase();
+
+        if (base.equals("GK"))                                             return Position.GK;
+        if (base.startsWith("DM") || base.startsWith("M") || base.startsWith("AM")) return Position.MF;
+        if (base.startsWith("D") || base.equals("SW"))                    return Position.DF;
+        return Position.FW;
     }
 }
 

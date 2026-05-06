@@ -1,7 +1,5 @@
 package com.unq.dapp.bolsa.shared.error;
 
-import com.unq.dapp.bolsa.catalog.application.PlayerNotFoundException;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -34,34 +32,28 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(DomainException.class)
     public ResponseEntity<ErrorResponse> handleDomain(DomainException ex) {
-        return ResponseEntity.unprocessableEntity()
+        return ResponseEntity.status(ex.getStatus())
                 .body(new ErrorResponse(ex.getErrorCode(), ex.getMessage(), Instant.now()));
-    }
-
-    @ExceptionHandler(PlayerNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handlePlayerNotFound(PlayerNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ErrorResponse("PLAYER_NOT_FOUND", ex.getMessage(), Instant.now()));
     }
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex) {
         logger.debug("Bad credentials: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+        return ResponseEntity.status(401)
                 .body(new ErrorResponse("BAD_CREDENTIALS", "Credenciales inválidas", Instant.now()));
     }
 
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleUsernameNotFound(UsernameNotFoundException ex) {
         logger.debug("Username not found: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+        return ResponseEntity.status(401)
                 .body(new ErrorResponse("BAD_CREDENTIALS", "Credenciales inválidas", Instant.now()));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex) {
         logger.error("Unhandled exception", ex);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        return ResponseEntity.status(500)
                 .body(new ErrorResponse("INTERNAL_ERROR", "Error interno del servidor", Instant.now()));
     }
 }

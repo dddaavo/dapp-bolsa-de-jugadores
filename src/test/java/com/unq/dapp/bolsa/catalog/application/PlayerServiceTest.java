@@ -1,8 +1,8 @@
 package com.unq.dapp.bolsa.catalog.application;
 
-import com.unq.dapp.bolsa.catalog.api.PlayerResponse;
 import com.unq.dapp.bolsa.catalog.domain.League;
 import com.unq.dapp.bolsa.catalog.domain.Player;
+import com.unq.dapp.bolsa.catalog.domain.PlayerNotFoundException;
 import com.unq.dapp.bolsa.catalog.domain.Position;
 import com.unq.dapp.bolsa.catalog.infrastructure.PlayerRepository;
 import org.junit.jupiter.api.Test;
@@ -40,10 +40,10 @@ class PlayerServiceTest {
         when(playerRepository.findWithFilters(any(), any(), any(), eq(pageable)))
                 .thenReturn(new PageImpl<>(List.of(player)));
 
-        Page<PlayerResponse> result = playerService.list(null, null, null, pageable);
+        Page<Player> result = playerService.list(null, null, null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).name()).isEqualTo("Erling Haaland");
+        assertThat(result.getContent().get(0).getName()).isEqualTo("Erling Haaland");
     }
 
     @Test
@@ -53,10 +53,10 @@ class PlayerServiceTest {
         when(playerRepository.findWithFilters(eq(League.LA_LIGA), any(), any(), eq(pageable)))
                 .thenReturn(new PageImpl<>(List.of(player)));
 
-        Page<PlayerResponse> result = playerService.list(League.LA_LIGA, null, null, pageable);
+        Page<Player> result = playerService.list(League.LA_LIGA, null, null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).league()).isEqualTo(League.LA_LIGA);
+        assertThat(result.getContent().get(0).getLeague()).isEqualTo(League.LA_LIGA);
     }
 
     @Test
@@ -64,10 +64,10 @@ class PlayerServiceTest {
         Player player = buildPlayer(1L, "Erling Haaland", Position.FW, "Manchester City", League.PREMIER_LEAGUE);
         when(playerRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(player));
 
-        PlayerResponse result = playerService.findById(1L);
+        Player result = playerService.findById(1L);
 
-        assertThat(result.id()).isEqualTo(1L);
-        assertThat(result.name()).isEqualTo("Erling Haaland");
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getName()).isEqualTo("Erling Haaland");
     }
 
     @Test

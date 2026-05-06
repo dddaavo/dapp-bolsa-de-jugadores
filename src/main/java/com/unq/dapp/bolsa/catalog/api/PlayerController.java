@@ -36,7 +36,7 @@ public class PlayerController {
             @Parameter(description = "Filtrar por posición") @RequestParam(required = false) Position position,
             Pageable pageable
     ) {
-        return ResponseEntity.ok(playerService.list(league, team, position, pageable));
+        return ResponseEntity.ok(playerService.list(league, team, position, pageable).map(PlayerResponse::from));
     }
 
     @Operation(summary = "Obtener jugador por ID")
@@ -47,6 +47,6 @@ public class PlayerController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<PlayerResponse> findById(@PathVariable Long id) {
-        return ResponseEntity.ok(playerService.findById(id));
+        return ResponseEntity.ok(PlayerResponse.from(playerService.findById(id)));
     }
 }

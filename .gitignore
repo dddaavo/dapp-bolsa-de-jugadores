@@ -1,0 +1,10 @@
+target/
+.env
+.claude/settings.local.json
+*.class
+.idea/
+*.iml
+.DS_Store
+*.log
+*.jar
+!.mvn/wrapper/maven-wrapper.jar

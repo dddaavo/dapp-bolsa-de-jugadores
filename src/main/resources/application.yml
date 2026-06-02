@@ -1,0 +1,38 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: bolsa-de-jugadores
+  jpa:
+    open-in-view: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+jwt:
+  secret: ${JWT_SECRET:ZGV2LXNlY3JldC1rZXktcGxlYXNlLWNoYW5nZS1pbi1wcm9kdWN0aW9uLXRoaXMtaXMtZGV2LW9ubHk=}
+  access-ttl-minutes: ${JWT_ACCESS_TTL_MINUTES:15}
+
+# Scraping WhoScored — desactivado por defecto para no romper CI ni startup en test
+# Activar en local sobreescribiendo con: whoscored.scraping.enabled=true
+whoscored:
+  scraping:
+    enabled: ${WHOSCORED_SCRAPING_ENABLED:false}
+
+app:
+  seed:
+    admin-password: ${APP_SEED_ADMIN_PASSWORD:admin1234}
+

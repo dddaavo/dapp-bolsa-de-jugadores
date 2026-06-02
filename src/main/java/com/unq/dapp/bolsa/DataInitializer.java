@@ -46,17 +46,36 @@ public class DataInitializer implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        seedAdminUser();
+        seedUsers();
         seedPlayers();
     }
 
-    private void seedAdminUser() {
+    private void seedUsers() {
+        // Admin principal
         if (!userRepository.existsByEmail("system@bolsa.local")) {
             User admin = new User();
             admin.setEmail("system@bolsa.local");
             admin.setPasswordHash(passwordEncoder.encode(adminPassword));
             admin.setRole(Role.ADMIN);
             userRepository.save(admin);
+            log.info("[DataInitializer] Usuario ADMIN creado: system@bolsa.local");
+        }
+
+        // 4 usuarios de prueba (requerido en E1)
+        createUserIfNotExists("alice@example.com", "Alice1234");
+        createUserIfNotExists("bob@example.com", "Bob1234");
+        createUserIfNotExists("charlie@example.com", "Charlie1234");
+        createUserIfNotExists("diana@example.com", "Diana1234");
+    }
+
+    private void createUserIfNotExists(String email, String password) {
+        if (!userRepository.existsByEmail(email)) {
+            User user = new User();
+            user.setEmail(email);
+            user.setPasswordHash(passwordEncoder.encode(password));
+            user.setRole(Role.USER);
+            userRepository.save(user);
+            log.info("[DataInitializer] Usuario USER creado: {}", email);
         }
     }
 

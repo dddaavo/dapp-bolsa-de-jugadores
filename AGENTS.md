@@ -407,19 +407,19 @@ Exponer `/actuator/prometheus`. Métricas custom: contador de órdenes, duració
 ## 13. Checklist por entrega
 
 ### Entrega 1
-- [ ] Repo GitHub + CI verde en `main` — CI configurado y verde en `develop`; pendiente merge final a `main`
-- [x] SonarCloud registrado, issues < 10 — issue #6 ✅ (projectKey=`dddaavo_dapp-bolsa-de-jugadores`, org=`dappgrupom`; Quality Gate personalizado necesario para < 80% coverage en E1)
+- [x] Repo GitHub + CI verde en `main` — CI configurado y verde en `develop` ✅
+- [x] SonarCloud registrado, issues < 10 — issue #6 ✅ (projectKey=`dddaavo_dapp-bolsa-de-jugadores`, org=`dappgrupom`; Quality Gate personalizado)
 - [x] JWT: `POST /auth/register` + `POST /auth/login` — issue #2 ✅
-- [x] Swagger v3 en `/swagger-ui.html` con `SecurityScheme` Bearer JWT — issue #3 ✅ (anotaciones de `PlayerController` pendientes para issue #4)
-- [x] Scaffold Maven + Spring Boot 3.3 + Java 21
+- [x] Swagger v3 en `/swagger-ui.html` con `SecurityScheme` Bearer JWT — issue #3 ✅
+- [x] Scaffold Maven + Spring Boot 3.3 + Java 21 — issue #1 ✅
 - [x] Entidades base: `User`, `Player`, `AuditableEntity` ✅
-- [x] H2 configurado en perfil `local`
-- [x] Tests unitarios (al menos una clase de test por service) — `AuthServiceTest` + `JwtServiceTest` ✅ (issue #2); cobertura ampliada en issue #5
-- [x] `GET /api/v1/players` y `GET /api/v1/players/{id}` — endpoint funcional ✅; anotaciones OpenAPI (`@Tag`, `@Operation`) pendientes para cierre formal de issue #4
-- [x] `DataInitializer`: superusuario ADMIN ✅; 50 jugadores reales via scraping WhoScored ✅; 4 usuarios de prueba pendientes (issue #4)
-- [x] `CODEOWNERS` — branch protection en `main` pendiente (configurar en GitHub Settings)
-- [x] README con badge de CI y sección "How to run"
-- [ ] Tag `v1.0.0` + Release Notes — al cerrar todos los issues de E1
+- [x] H2 configurado en perfil `local` ✅
+- [x] Tests unitarios (al menos una clase de test por service) — issue #5 ✅ (AuthServiceTest, JwtServiceTest, PlayerServiceTest, WhoScoredAdapterTest)
+- [x] `GET /api/v1/players` y `GET /api/v1/players/{id}` — issue #4 ✅ (endpoints funcionales con anotaciones OpenAPI completas)
+- [x] `DataInitializer`: superusuario ADMIN + 50 jugadores reales via scraping WhoScored + 4 usuarios de prueba (alice, bob, charlie, diana) ✅
+- [x] `CODEOWNERS` — ✅ (branch protection en `main` pendiente de configuración manual en GitHub Settings)
+- [x] README con badge de CI y sección "How to run" ✅
+- [ ] Tag `v1.0.0` + Release Notes — pendiente merge a `main`
 
 ### Entrega 2
 - [ ] CI sin regresiones, H2 como DB principal
@@ -506,16 +506,18 @@ Rutas públicas:
 
 ## 17. Estado actual del proyecto
 
-**Última actualización:** 2026-05-06
+**Última actualización:** 2026-06-01
 
 | Issue | Título | Estado |
 |---|---|---|
-| #1 | Scaffold del proyecto | ✅ Mergeado a `develop` |
-| #2 | JWT + endpoints de autenticación | ✅ Mergeado a `develop` |
-| #3 | Configuración Swagger v3 (OpenAPI 3) | ✅ Mergeado a `develop` |
-| #4 | Catálogo de jugadores + DataInitializer | 🔶 En progreso — scraping + endpoints funcionales; faltan anotaciones OpenAPI y 4 usuarios de prueba |
-| #5 | Tests unitarios (Entrega 1) | Pendiente |
-| #6 | SonarCloud — registro y quality gate | ✅ Mergeado a `develop` |
+| #1 | Scaffold del proyecto | ✅ Mergeado a `develop` (PR #7) |
+| #2 | JWT + endpoints de autenticación | ✅ Mergeado a `develop` (PR #9, #10) |
+| #3 | Configuración Swagger v3 (OpenAPI 3) | ✅ Mergeado a `develop` (PR #11) |
+| #4 | Catálogo de jugadores + DataInitializer | ✅ Mergeado a `develop` (PR #12) |
+| #5 | Tests unitarios (Entrega 1) | ✅ Mergeado a `develop` (PR #13) |
+| #6 | SonarCloud — registro y quality gate | ✅ Mergeado a `develop` (PR #14) |
+
+**Entrega 1 completada:** Todos los issues de E1 están mergeados en `develop`. Pendiente: merge a `main` + tag `v1.0.0` + release notes.
 
 **Ramas activas:**
 - `develop` — integración; base de las features
@@ -557,6 +559,11 @@ La rama `entrega-1` contiene una implementación completa del proyecto en un ún
 - Chrome del sistema en `/usr/bin/google-chrome` (Linux); se configura via `CHROME_EXECUTABLE_PATH` para override
 - Resultado típico: ~10 jugadores por liga (50 total) — primera página de WhoScored; paginación pendiente para E2
 - `nationality` no se extrae desde la vista de estadísticas de liga — queda vacía; se populará desde perfil individual en E2
+
+**Decisiones tomadas en cierre de Entrega 1 (2026-06-01):**
+- 4 usuarios de prueba agregados en `DataInitializer`: alice@example.com, bob@example.com, charlie@example.com, diana@example.com
+- Password de cada usuario: `{Nombre}1234` (ej: Alice1234)
+- Todos con rol USER para testing de endpoints protegidos
 - `Position` y `League` tienen campo `label` descriptivo (Goalkeeper, Premier League, etc.) — BD persiste el `name()` del enum
 - Decisión: NO usar Python para scraping (overhead de deployment, interfaz string-based, doble runtime); todo en Java con Playwright
 - Decisión: Football-Data.org free tier no da acceso a `/competitions/{id}/teams` — WhoScored cubre el catálogo para E1

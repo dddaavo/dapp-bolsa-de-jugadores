@@ -419,7 +419,7 @@ Exponer `/actuator/prometheus`. Métricas custom: contador de órdenes, duració
 - [x] `DataInitializer`: superusuario ADMIN + 50 jugadores reales via scraping WhoScored + 4 usuarios de prueba (alice, bob, charlie, diana) ✅
 - [x] `CODEOWNERS` — ✅ (branch protection en `main` pendiente de configuración manual en GitHub Settings)
 - [x] README con badge de CI y sección "How to run" ✅
-- [ ] Tag `v1.0.0` + Release Notes — pendiente merge a `main`
+- [x] Tag `v1.0.0` + Release Notes — ✅ completado el 2026-06-01
 
 ### Entrega 2
 - [ ] CI sin regresiones, H2 como DB principal
@@ -517,7 +517,11 @@ Rutas públicas:
 | #5 | Tests unitarios (Entrega 1) | ✅ Mergeado a `develop` (PR #13) |
 | #6 | SonarCloud — registro y quality gate | ✅ Mergeado a `develop` (PR #14) |
 
-**Entrega 1 completada:** Todos los issues de E1 están mergeados en `develop`. Pendiente: merge a `main` + tag `v1.0.0` + release notes.
+**Entrega 1 completada:** Todos los issues de E1 están mergeados en `develop` y en `main`. Tag v1.0.0 creado el 2026-06-01. Release publicado en GitHub: https://github.com/dddaavo/dapp-bolsa-de-jugadores/releases/tag/v1.0.0
+
+**PRs de Entrega 1:**
+- PR #7, #9, #10, #11, #12, #13, #14, #16, #17 → mergeados a `develop`
+- PR #18 → mergeado a `main` (Release v1.0.0)
 
 **Ramas activas:**
 - `develop` — integración; base de las features

@@ -32,6 +32,10 @@ whoscored:
   scraping:
     enabled: ${WHOSCORED_SCRAPING_ENABLED:false}
 
+quote:
+  recalc:
+    cron: ${QUOTE_RECALC_CRON:0 0 3 * * MON}
+
 app:
   seed:
     admin-password: ${APP_SEED_ADMIN_PASSWORD:admin1234}

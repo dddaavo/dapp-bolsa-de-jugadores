@@ -23,3 +23,7 @@ whoscored:
   scraping:
     enabled: false
 
+quote:
+  recalc:
+    cron: "-"
+

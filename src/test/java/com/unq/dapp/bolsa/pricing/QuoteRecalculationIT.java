@@ -116,6 +116,7 @@ class QuoteRecalculationIT {
     private HttpEntity<Void> requestConToken(String token) {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
+        headers.setContentType(MediaType.APPLICATION_JSON);
         return new HttpEntity<>(headers);
     }
 }

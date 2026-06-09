@@ -426,7 +426,7 @@ Exponer `/actuator/prometheus`. Métricas custom: contador de órdenes, duració
 - [ ] `DataInitializer`: 4 usuarios de prueba + cotizaciones iniciales — los 50 jugadores ya están (ver E1); completar escenario §8: 4 usuarios + compra de 5 jugadores + evolución de cotizaciones por liga
 - [ ] Swagger v3 completo con `@Operation`, `@ApiResponse`, `@Schema`
 - [ ] Surefire + Failsafe separados; JaCoCo en CI
-- [ ] Sistema de cotización: al menos una `PricingStrategy`
+- [x] Sistema de cotización: al menos una `PricingStrategy` — issue #19 ✅ (`MatchMetricsStrategy v1.0`, domain + application implementados; controllers pendientes)
 - [ ] `GET /players/{id}/quotes/current`, historial, ranking
 - [ ] `POST /quotes/recalculate` (ADMIN)
 - [ ] Tag `v2.0.0`
@@ -506,7 +506,7 @@ Rutas públicas:
 
 ## 17. Estado actual del proyecto
 
-**Última actualización:** 2026-06-01
+**Última actualización:** 2026-06-08
 
 | Issue | Título | Estado |
 |---|---|---|
@@ -516,12 +516,16 @@ Rutas públicas:
 | #4 | Catálogo de jugadores + DataInitializer | ✅ Mergeado a `develop` (PR #12) |
 | #5 | Tests unitarios (Entrega 1) | ✅ Mergeado a `develop` (PR #13) |
 | #6 | SonarCloud — registro y quality gate | ✅ Mergeado a `develop` (PR #14) |
+| #19 | Sistema de cotización base (domain + application) | ✅ Mergeado a `develop` (PR #23, #24) |
 
 **Entrega 1 completada:** Todos los issues de E1 están mergeados en `develop` y en `main`. Tag v1.0.0 creado el 2026-06-01. Release publicado en GitHub: https://github.com/dddaavo/dapp-bolsa-de-jugadores/releases/tag/v1.0.0
 
 **PRs de Entrega 1:**
 - PR #7, #9, #10, #11, #12, #13, #14, #16, #17 → mergeados a `develop`
 - PR #18 → mergeado a `main` (Release v1.0.0)
+
+**PRs de Entrega 2 (en curso):**
+- PR #23, #24 → mergeados a `develop` (issue #19 — pricing system)
 
 **Ramas activas:**
 - `develop` — integración; base de las features
@@ -583,6 +587,18 @@ La rama `entrega-1` contiene una implementación completa del proyecto en un ún
 - `JwtAuthFilter`: corregido bug real — token JWT malformado/expirado causaba HTTP 500; ahora se captura y devuelve 401
 - `ApiExceptionHandler`: parámetros `ex` usados con logging SLF4J (resuelve `java:S1172`)
 - `DomainException` + `PlayerNotFoundException`: `serialVersionUID` agregado (`java:S2057`)
+
+**Decisiones tomadas en issue #19 — Sistema de cotización (2026-06-08):**
+- Domain y application layer implementados; controllers REST (pricing `api/`) pendientes para un issue separado
+- `Money` como value object inmutable con `BigDecimal` — no entidad JPA, sin columna propia; se almacena como columna `value` en `Quote`
+- `StrategyWeights` como value object con validación: pesos deben sumar exactamente 1.0 (delta ≤ 0.001)
+- `PricingContext` como record — contiene el `PlayerMetricsSnapshot` y datos auxiliares del jugador
+- `MatchMetricsStrategy v1.0`: normaliza métricas a [0,1], score = Σ peso_i · métrica_norm_i, resultado escalado a `Money`
+- `StrategyRegistry`: Spring-managed map de `PricingStrategy` beans por nombre — permite agregar estrategias nuevas sin modificar código existente
+- `QuoteRecalculationOrchestrator`: recorre todos los jugadores y calcula cotización usando la estrategia activa; no expuesto aún via HTTP
+- `PlayerTokenInventory`: entidad con `@Version` para optimistic locking; totalEmitted=100, initialTokenValue=1 crédito
+- Tests unitarios: 51 tests en total para el módulo pricing (MoneyTest 14, MatchMetricsStrategyTest 6, QuoteServiceTest 5, QuoteRecalculationOrchestratorTest 6, QuoteRepositoryTest 7, StrategyWeightsTest 6, PricingContextTest 3, StrategyRegistryTest 5)
+- Cobertura del módulo pricing subió de 78.4% a ≥80% para satisfacer el Quality Gate personalizado
 
 ---
 

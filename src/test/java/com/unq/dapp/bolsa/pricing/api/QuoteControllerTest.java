@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,7 +50,7 @@ class QuoteControllerTest {
         Quote q = new Quote();
         q.setPlayerId(playerId);
         q.setValue(new Money(BigDecimal.valueOf(value), "CREDITS"));
-        q.setCalculatedAt(LocalDateTime.of(2026, 6, 1, 10, 0));
+        q.setCalculatedAt(LocalDateTime.of(2026, Month.JUNE, 1, 10, 0));
         q.setStrategyName("matchMetrics");
         q.setStrategyVersion("1.0");
         return q;

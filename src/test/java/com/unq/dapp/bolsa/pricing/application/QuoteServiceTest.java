@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -70,8 +71,8 @@ class QuoteServiceTest {
     void deberiaObtenerHistorialEnRangoDeFechas() {
         // Given
         Long playerId = 1L;
-        LocalDate from = LocalDate.of(2026, 1, 8);
-        LocalDate to = LocalDate.of(2026, 1, 15);
+        LocalDate from = LocalDate.of(2026, Month.JANUARY, 8);
+        LocalDate to = LocalDate.of(2026, Month.JANUARY, 15);
 
         Quote quote1 = crearQuote(playerId, Money.of(1.5));
         Quote quote2 = crearQuote(playerId, Money.of(1.6));
@@ -93,8 +94,8 @@ class QuoteServiceTest {
     void deberiaRetornarHistorialVacioSinCotizaciones() {
         // Given
         Long playerId = 1L;
-        LocalDate from = LocalDate.of(2026, 1, 8);
-        LocalDate to = LocalDate.of(2026, 1, 15);
+        LocalDate from = LocalDate.of(2026, Month.JANUARY, 8);
+        LocalDate to = LocalDate.of(2026, Month.JANUARY, 15);
 
         when(quoteRepository.findByPlayerIdAndCalculatedAtBetweenOrderByCalculatedAtDesc(
                 eq(playerId), any(LocalDateTime.class), any(LocalDateTime.class)))
@@ -130,7 +131,7 @@ class QuoteServiceTest {
         Quote quote = new Quote();
         quote.setPlayerId(playerId);
         quote.setValue(value);
-        quote.setCalculatedAt(LocalDateTime.of(2026, 1, 15, 12, 0));
+        quote.setCalculatedAt(LocalDateTime.of(2026, Month.JANUARY, 15, 12, 0));
         quote.setStrategyName("MatchMetrics");
         quote.setStrategyVersion("v1.0");
         return quote;

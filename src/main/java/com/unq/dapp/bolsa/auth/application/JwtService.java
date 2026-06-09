@@ -27,6 +27,7 @@ public class JwtService {
         this.accessTtlMinutes = accessTtlMinutes;
     }
 
+    @SuppressWarnings("java:S2143") // jjwt 0.12.x requires java.util.Date; no Instant-based API available
     public String generateToken(UserDetails userDetails) {
         Instant now = Instant.now();
         return Jwts.builder()

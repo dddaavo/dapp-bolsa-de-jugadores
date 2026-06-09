@@ -9,6 +9,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 class QuoteRepositoryTest {
 
-    private static final LocalDateTime BASE_TIME = LocalDateTime.of(2026, 1, 15, 12, 0);
+    private static final LocalDateTime BASE_TIME = LocalDateTime.of(2026, Month.JANUARY, 15, 12, 0);
 
     @Autowired
     private QuoteRepository quoteRepository;

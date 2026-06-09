@@ -191,8 +191,8 @@ class QuoteRecalculationOrchestratorTest {
         metrics.setAssists(5);
         metrics.setRating(BigDecimal.valueOf(7.5));
         metrics.setMatches(10);
-        metrics.setPeriodStart(LocalDate.now().minusMonths(1));
-        metrics.setPeriodEnd(LocalDate.now());
+        metrics.setPeriodStart(LocalDate.of(2025, 12, 15));
+        metrics.setPeriodEnd(LocalDate.of(2026, 1, 15));
         return metrics;
     }
 

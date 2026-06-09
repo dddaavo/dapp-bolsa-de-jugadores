@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 /**
@@ -53,8 +54,10 @@ public class QuoteRecalculationOrchestrator {
         PricingStrategy strategy = resolveStrategy(strategyName);
         List<Player> players = playerRepository.findAll();
 
-        log.info("[QuoteRecalculation] Iniciando recalculación con estrategia {} v{} para {} jugadores",
-                strategy.name(), strategy.version(), players.size());
+        if (log.isInfoEnabled()) {
+            log.info("[QuoteRecalculation] Iniciando recalculación con estrategia {} v{} para {} jugadores",
+                    strategy.name(), strategy.version(), players.size());
+        }
 
         int recalculated = 0;
         for (Player player : players) {
@@ -107,7 +110,7 @@ public class QuoteRecalculationOrchestrator {
         Quote quote = new Quote();
         quote.setPlayerId(playerId);
         quote.setValue(value);
-        quote.setCalculatedAt(LocalDateTime.now());
+        quote.setCalculatedAt(LocalDateTime.now(ZoneOffset.UTC));
         quote.setStrategyName(strategy.name());
         quote.setStrategyVersion(strategy.version());
 

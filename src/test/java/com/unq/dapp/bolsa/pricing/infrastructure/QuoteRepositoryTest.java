@@ -18,6 +18,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 class QuoteRepositoryTest {
 
+    private static final LocalDateTime BASE_TIME = LocalDateTime.of(2026, 1, 15, 12, 0);
+
     @Autowired
     private QuoteRepository quoteRepository;
 
@@ -27,7 +29,7 @@ class QuoteRepositoryTest {
     @Test
     void deberiaGuardarYRecuperarQuote() {
         // Given
-        Quote quote = crearQuote(1L, Money.of(1.5), LocalDateTime.now());
+        Quote quote = crearQuote(1L, Money.of(1.5), BASE_TIME);
 
         // When
         Quote saved = quoteRepository.save(quote);
@@ -47,9 +49,9 @@ class QuoteRepositoryTest {
     void deberiaEncontrarCotizacionMasReciente() {
         // Given
         Long playerId = 1L;
-        Quote quote1 = crearQuote(playerId, Money.of(1.5), LocalDateTime.now().minusDays(2));
-        Quote quote2 = crearQuote(playerId, Money.of(1.6), LocalDateTime.now().minusDays(1));
-        Quote quote3 = crearQuote(playerId, Money.of(1.7), LocalDateTime.now());
+        Quote quote1 = crearQuote(playerId, Money.of(1.5), BASE_TIME.minusDays(2));
+        Quote quote2 = crearQuote(playerId, Money.of(1.6), BASE_TIME.minusDays(1));
+        Quote quote3 = crearQuote(playerId, Money.of(1.7), BASE_TIME);
 
         quoteRepository.saveAll(List.of(quote1, quote2, quote3));
         entityManager.flush();
@@ -66,7 +68,7 @@ class QuoteRepositoryTest {
     void deberiaFiltrarPorRangoDeFechas() {
         // Given
         Long playerId = 1L;
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = BASE_TIME;
         Quote quote1 = crearQuote(playerId, Money.of(1.5), now.minusDays(10));
         Quote quote2 = crearQuote(playerId, Money.of(1.6), now.minusDays(5));
         Quote quote3 = crearQuote(playerId, Money.of(1.7), now.minusDays(2));
@@ -92,9 +94,9 @@ class QuoteRepositoryTest {
     void deberiaEncontrarTodasLasCotizacionesDeUnJugador() {
         // Given
         Long playerId = 1L;
-        Quote quote1 = crearQuote(playerId, Money.of(1.5), LocalDateTime.now().minusDays(3));
-        Quote quote2 = crearQuote(playerId, Money.of(1.6), LocalDateTime.now().minusDays(2));
-        Quote quote3 = crearQuote(playerId, Money.of(1.7), LocalDateTime.now().minusDays(1));
+        Quote quote1 = crearQuote(playerId, Money.of(1.5), BASE_TIME.minusDays(3));
+        Quote quote2 = crearQuote(playerId, Money.of(1.6), BASE_TIME.minusDays(2));
+        Quote quote3 = crearQuote(playerId, Money.of(1.7), BASE_TIME.minusDays(1));
 
         quoteRepository.saveAll(List.of(quote1, quote2, quote3));
         entityManager.flush();
@@ -119,7 +121,7 @@ class QuoteRepositoryTest {
     @Test
     void deberiaPersistirAuditoriaCorrectamente() {
         // Given
-        Quote quote = crearQuote(1L, Money.of(1.5), LocalDateTime.now());
+        Quote quote = crearQuote(1L, Money.of(1.5), BASE_TIME);
 
         // When
         Quote saved = quoteRepository.save(quote);

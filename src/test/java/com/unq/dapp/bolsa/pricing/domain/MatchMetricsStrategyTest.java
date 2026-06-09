@@ -101,8 +101,8 @@ class MatchMetricsStrategyTest {
         metrics.setRating(rating);
         metrics.setMatches(matches);
         metrics.setMinutesPlayed(matches * 90);
-        metrics.setPeriodStart(LocalDate.now().minusMonths(1));
-        metrics.setPeriodEnd(LocalDate.now());
+        metrics.setPeriodStart(LocalDate.of(2025, 12, 15));
+        metrics.setPeriodEnd(LocalDate.of(2026, 1, 15));
         return metrics;
     }
 }

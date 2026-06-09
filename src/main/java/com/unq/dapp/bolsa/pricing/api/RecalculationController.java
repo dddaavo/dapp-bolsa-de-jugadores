@@ -37,7 +37,7 @@ public class RecalculationController {
                 ? strategyName
                 : strategyRegistry.getDefault().name();
 
-        int total = orchestrator.recalculateAll(strategyName);
+        int total = orchestrator.recalculateAll(resolvedStrategy);
 
         return ResponseEntity.ok(new RecalculationResponse(total, resolvedStrategy, LocalDateTime.now(ZoneOffset.UTC)));
     }

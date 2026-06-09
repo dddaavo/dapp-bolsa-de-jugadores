@@ -2,6 +2,7 @@ package com.unq.dapp.bolsa.pricing.application;
 
 import com.unq.dapp.bolsa.pricing.domain.Quote;
 import com.unq.dapp.bolsa.pricing.infrastructure.QuoteRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,14 +50,16 @@ public class QuoteService {
         );
     }
 
-    /**
-     * Obtiene todas las cotizaciones de un jugador.
-     *
-     * @param playerId ID del jugador
-     * @return Lista de todas las cotizaciones ordenadas por fecha descendente
-     */
     public List<Quote> getAllQuotes(Long playerId) {
         return quoteRepository.findByPlayerIdOrderByCalculatedAtDesc(playerId);
+    }
+
+    public List<Quote> getRankingQuotes(int limit, String strategyName) {
+        var pageable = PageRequest.of(0, limit);
+        if (strategyName != null && !strategyName.isBlank()) {
+            return quoteRepository.findLatestPerPlayerByStrategyOrderByValueDesc(strategyName, pageable);
+        }
+        return quoteRepository.findLatestPerPlayerOrderByValueDesc(pageable);
     }
 }
 

@@ -5,7 +5,6 @@ import com.unq.dapp.bolsa.catalog.domain.League;
 import com.unq.dapp.bolsa.catalog.domain.Player;
 import com.unq.dapp.bolsa.catalog.domain.Position;
 import com.unq.dapp.bolsa.catalog.infrastructure.PlayerRepository;
-import com.unq.dapp.bolsa.pricing.domain.Money;
 import com.unq.dapp.bolsa.pricing.domain.PlayerMetricsSnapshot;
 import com.unq.dapp.bolsa.pricing.domain.PlayerTokenInventory;
 import com.unq.dapp.bolsa.pricing.infrastructure.PlayerMetricsSnapshotRepository;

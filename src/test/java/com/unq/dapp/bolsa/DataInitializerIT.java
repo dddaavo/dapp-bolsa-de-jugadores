@@ -1,12 +1,16 @@
 package com.unq.dapp.bolsa;
 
+import com.unq.dapp.bolsa.auth.infrastructure.UserRepository;
+import com.unq.dapp.bolsa.catalog.domain.League;
+import com.unq.dapp.bolsa.catalog.domain.Player;
+import com.unq.dapp.bolsa.catalog.domain.Position;
 import com.unq.dapp.bolsa.catalog.infrastructure.PlayerRepository;
-import com.unq.dapp.bolsa.pricing.domain.Quote;
 import com.unq.dapp.bolsa.pricing.infrastructure.PlayerMetricsSnapshotRepository;
 import com.unq.dapp.bolsa.pricing.infrastructure.PlayerTokenInventoryRepository;
 import com.unq.dapp.bolsa.pricing.infrastructure.QuoteRepository;
-import com.unq.dapp.bolsa.auth.infrastructure.UserRepository;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -15,6 +19,7 @@ import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles("test")
 class DataInitializerIT {
@@ -33,6 +38,30 @@ class DataInitializerIT {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private DataInitializer dataInitializer;
+
+    @BeforeAll
+    void setup() throws Exception {
+        if (playerRepository.count() == 0) {
+            Player fw = new Player();
+            fw.setName("Test FW Player");
+            fw.setPosition(Position.FW);
+            fw.setTeam("Test FC");
+            fw.setLeague(League.PREMIER_LEAGUE);
+            playerRepository.save(fw);
+
+            Player df = new Player();
+            df.setName("Test DF Player");
+            df.setPosition(Position.DF);
+            df.setTeam("Test FC");
+            df.setLeague(League.LA_LIGA);
+            playerRepository.save(df);
+        }
+
+        dataInitializer.run(null);
+    }
 
     @Test
     void deberiaCrearMetricasParaTodosLosJugadores() {

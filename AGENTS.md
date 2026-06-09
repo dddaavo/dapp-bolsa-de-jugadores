@@ -517,7 +517,7 @@ Rutas públicas:
 | #5 | Tests unitarios (Entrega 1) | ✅ Mergeado a `develop` (PR #13) |
 | #6 | SonarCloud — registro y quality gate | ✅ Mergeado a `develop` (PR #14) |
 | #19 | Sistema de cotización base (domain + application) | ✅ Mergeado a `develop` (PR #23, #24) |
-| #40 | endpoints REST de cotización (historial, actual y ranking) | ✅ Mergeado a `develop` (PR #??) |
+| #40 | endpoints REST de cotización (historial, actual y ranking) | ✅ Mergeado a `develop` (PR #42) |
 
 **Entrega 1 completada:** Todos los issues de E1 están mergeados en `develop` y en `main`. Tag v1.0.0 creado el 2026-06-01. Release publicado en GitHub: https://github.com/dddaavo/dapp-bolsa-de-jugadores/releases/tag/v1.0.0
 
@@ -527,7 +527,7 @@ Rutas públicas:
 
 **PRs de Entrega 2 (en curso):**
 - PR #23, #24 → mergeados a `develop` (issue #19 — pricing system)
-- PR #?? → mergeado a `develop` (issue #40 — quote REST endpoints)
+- PR #42 → mergeado a `develop` (issue #40 — quote REST endpoints)
 
 **Ramas activas:**
 - `develop` — integración; base de las features

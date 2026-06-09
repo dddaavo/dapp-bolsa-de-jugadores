@@ -1,5 +1,6 @@
 package com.unq.dapp.bolsa.trading.application;
 
+import com.unq.dapp.bolsa.catalog.domain.Player;
 import com.unq.dapp.bolsa.catalog.infrastructure.PlayerRepository;
 import com.unq.dapp.bolsa.pricing.application.QuoteService;
 import com.unq.dapp.bolsa.pricing.domain.PlayerTokenInventory;
@@ -59,7 +60,7 @@ public class OrderService {
 
         Set<Long> playerIds = orders.stream().map(Order::getPlayerId).collect(Collectors.toSet());
         Map<Long, String> playerNames = playerRepository.findAllById(playerIds).stream()
-                .collect(Collectors.toMap(p -> p.getId(), p -> p.getName()));
+                .collect(Collectors.toMap(Player::getId, Player::getName));
 
         return orders.map(o -> TransactionResponse.from(o, playerNames.getOrDefault(o.getPlayerId(), "Desconocido")));
     }

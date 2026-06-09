@@ -43,7 +43,7 @@ class DataInitializerIT {
     private DataInitializer dataInitializer;
 
     @BeforeAll
-    void setup() throws Exception {
+    void setup() {
         if (playerRepository.count() == 0) {
             Player fw = new Player();
             fw.setName("Test FW Player");

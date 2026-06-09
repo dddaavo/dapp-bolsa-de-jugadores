@@ -10,10 +10,18 @@ import com.unq.dapp.bolsa.catalog.infrastructure.PlayerRepository;
 import com.unq.dapp.bolsa.integration.port.PlayerStatsPort;
 import com.unq.dapp.bolsa.integration.port.ScrapedPlayer;
 import com.unq.dapp.bolsa.pricing.application.QuoteRecalculationOrchestrator;
+import com.unq.dapp.bolsa.pricing.domain.Money;
 import com.unq.dapp.bolsa.pricing.domain.PlayerMetricsSnapshot;
 import com.unq.dapp.bolsa.pricing.domain.PlayerTokenInventory;
+import com.unq.dapp.bolsa.pricing.domain.Quote;
 import com.unq.dapp.bolsa.pricing.infrastructure.PlayerMetricsSnapshotRepository;
 import com.unq.dapp.bolsa.pricing.infrastructure.PlayerTokenInventoryRepository;
+import com.unq.dapp.bolsa.pricing.infrastructure.QuoteRepository;
+import com.unq.dapp.bolsa.trading.domain.Order;
+import com.unq.dapp.bolsa.trading.domain.OrderType;
+import com.unq.dapp.bolsa.trading.domain.TokenHolding;
+import com.unq.dapp.bolsa.trading.infrastructure.OrderRepository;
+import com.unq.dapp.bolsa.trading.infrastructure.TokenHoldingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,15 +33,18 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.Month;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 @Component
 public class DataInitializer implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
+    private static final int TOKENS_PER_PURCHASE = 5;
+    private static final int PLAYERS_PER_USER = 5;
 
     private final UserRepository userRepository;
     private final PlayerRepository playerRepository;
@@ -42,6 +53,9 @@ public class DataInitializer implements ApplicationRunner {
     private final PlayerMetricsSnapshotRepository metricsRepository;
     private final PlayerTokenInventoryRepository inventoryRepository;
     private final QuoteRecalculationOrchestrator orchestrator;
+    private final QuoteRepository quoteRepository;
+    private final TokenHoldingRepository holdingRepository;
+    private final OrderRepository orderRepository;
     private final String adminPassword;
 
     public DataInitializer(UserRepository userRepository,
@@ -51,6 +65,9 @@ public class DataInitializer implements ApplicationRunner {
                            PlayerMetricsSnapshotRepository metricsRepository,
                            PlayerTokenInventoryRepository inventoryRepository,
                            QuoteRecalculationOrchestrator orchestrator,
+                           QuoteRepository quoteRepository,
+                           TokenHoldingRepository holdingRepository,
+                           OrderRepository orderRepository,
                            @Value("${app.seed.admin-password}") String adminPassword) {
         this.userRepository = userRepository;
         this.playerRepository = playerRepository;
@@ -59,6 +76,9 @@ public class DataInitializer implements ApplicationRunner {
         this.metricsRepository = metricsRepository;
         this.inventoryRepository = inventoryRepository;
         this.orchestrator = orchestrator;
+        this.quoteRepository = quoteRepository;
+        this.holdingRepository = holdingRepository;
+        this.orderRepository = orderRepository;
         this.adminPassword = adminPassword;
     }
 
@@ -69,6 +89,8 @@ public class DataInitializer implements ApplicationRunner {
         seedPlayers();
         seedPlayerMetrics();
         seedInitialQuotes();
+        seedQuoteHistory();
+        seedTradingScenario();
     }
 
     private void seedUsers() {
@@ -126,8 +148,7 @@ public class DataInitializer implements ApplicationRunner {
             if (metricsRepository.findTopByPlayerIdOrderByPeriodEndDesc(player.getId()).isPresent()) {
                 continue;
             }
-            PlayerMetricsSnapshot metrics = buildMetrics(player, periodStart, periodEnd);
-            metricsRepository.save(metrics);
+            metricsRepository.save(buildMetrics(player, periodStart, periodEnd));
             created++;
         }
         log.info("[DataInitializer] {} métricas de jugadores creadas", created);
@@ -141,9 +162,7 @@ public class DataInitializer implements ApplicationRunner {
         m.setMatches(12);
         m.setMinutesPlayed(1000);
 
-        Position pos = player.getPosition();
-        if (pos == null) pos = Position.MF;
-
+        Position pos = player.getPosition() != null ? player.getPosition() : Position.MF;
         switch (pos) {
             case FW -> { m.setGoals(8); m.setAssists(4); m.setRating(BigDecimal.valueOf(7.5)); }
             case MF -> { m.setGoals(4); m.setAssists(8); m.setRating(BigDecimal.valueOf(7.3)); }
@@ -170,6 +189,88 @@ public class DataInitializer implements ApplicationRunner {
 
         int total = orchestrator.recalculateAll(null);
         log.info("[DataInitializer] {} cotizaciones iniciales calculadas", total);
+    }
+
+    private void seedQuoteHistory() {
+        long totalPlayers = playerRepository.count();
+        if (totalPlayers == 0 || quoteRepository.count() > totalPlayers) return;
+
+        LocalDateTime[] pastDates = {
+            LocalDateTime.now(ZoneOffset.UTC).minusDays(30),
+            LocalDateTime.now(ZoneOffset.UTC).minusDays(15),
+            LocalDateTime.now(ZoneOffset.UTC).minusDays(7)
+        };
+
+        for (Player player : playerRepository.findAll()) {
+            double[] values = historicalValuesFor(player.getPosition());
+            for (int i = 0; i < pastDates.length; i++) {
+                Quote quote = new Quote();
+                quote.setPlayerId(player.getId());
+                quote.setValue(new Money(BigDecimal.valueOf(values[i]), "CREDITS"));
+                quote.setCalculatedAt(pastDates[i]);
+                quote.setStrategyName("MatchMetrics");
+                quote.setStrategyVersion("v1.0");
+                quoteRepository.save(quote);
+            }
+        }
+        log.info("[DataInitializer] Historial de cotizaciones creado para {} jugadores", totalPlayers);
+    }
+
+    private double[] historicalValuesFor(Position position) {
+        if (position == null) position = Position.MF;
+        return switch (position) {
+            case FW -> new double[]{1.55, 1.65, 1.72};
+            case MF -> new double[]{1.40, 1.48, 1.55};
+            case DF -> new double[]{1.25, 1.32, 1.38};
+            case GK -> new double[]{1.30, 1.36, 1.42};
+        };
+    }
+
+    private void seedTradingScenario() {
+        if (holdingRepository.count() > 0) return;
+
+        List<Player> players = playerRepository.findAll();
+        if (players.size() < 20) {
+            log.info("[DataInitializer] Menos de 20 jugadores disponibles, se omite el escenario de trading");
+            return;
+        }
+
+        String[] users = {"alice@example.com", "bob@example.com", "charlie@example.com", "diana@example.com"};
+        for (int u = 0; u < users.length; u++) {
+            final int startIdx = u * PLAYERS_PER_USER;
+            userRepository.findByEmail(users[u]).ifPresent(user -> {
+                for (int i = startIdx; i < startIdx + PLAYERS_PER_USER; i++) {
+                    seedBuyOrder(user, players.get(i));
+                }
+                log.info("[DataInitializer] Compras iniciales creadas para {}", user.getUsername());
+            });
+        }
+    }
+
+    private void seedBuyOrder(User user, Player player) {
+        PlayerTokenInventory inventory = inventoryRepository.findById(player.getId()).orElse(null);
+        if (inventory == null || inventory.getHeldBySystem() < TOKENS_PER_PURCHASE) return;
+
+        inventory.setHeldBySystem(inventory.getHeldBySystem() - TOKENS_PER_PURCHASE);
+        inventoryRepository.save(inventory);
+
+        TokenHolding holding = new TokenHolding();
+        holding.setUserId(user.getId());
+        holding.setPlayerId(player.getId());
+        holding.setQuantity(TOKENS_PER_PURCHASE);
+        holding.setAvgBuyPrice(BigDecimal.ONE);
+        holdingRepository.save(holding);
+
+        Order order = new Order();
+        order.setUserId(user.getId());
+        order.setPlayerId(player.getId());
+        order.setType(OrderType.BUY);
+        order.setQuantity(TOKENS_PER_PURCHASE);
+        order.setUnitPrice(BigDecimal.ONE);
+        order.setTotalAmount(BigDecimal.valueOf(TOKENS_PER_PURCHASE));
+        order.setIdempotencyKey(
+                UUID.nameUUIDFromBytes((user.getUsername() + ":" + player.getId()).getBytes()).toString());
+        orderRepository.save(order);
     }
 
     private Player toPlayer(ScrapedPlayer scraped) {

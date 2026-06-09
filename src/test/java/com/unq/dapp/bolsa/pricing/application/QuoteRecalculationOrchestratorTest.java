@@ -63,6 +63,7 @@ class QuoteRecalculationOrchestratorTest {
             PlayerMetricsSnapshot metrics = crearMetrics(player.getId());
             PlayerTokenInventory inventory = crearInventory(player.getId());
 
+            when(playerRepository.findById(player.getId())).thenReturn(Optional.of(player));
             when(metricsRepository.findTopByPlayerIdOrderByPeriodEndDesc(player.getId()))
                     .thenReturn(Optional.of(metrics));
             when(inventoryRepository.findById(player.getId()))
@@ -86,6 +87,7 @@ class QuoteRecalculationOrchestratorTest {
         Long playerId = 1L;
         MatchMetricsStrategy strategy = new MatchMetricsStrategy();
         when(strategyRegistry.getDefault()).thenReturn(strategy);
+        when(playerRepository.findById(playerId)).thenReturn(Optional.of(crearPlayer(playerId)));
 
         PlayerMetricsSnapshot metrics = crearMetrics(playerId);
         PlayerTokenInventory inventory = crearInventory(playerId);
@@ -113,6 +115,7 @@ class QuoteRecalculationOrchestratorTest {
         PricingStrategy customStrategy = new MatchMetricsStrategy(); // Simulamos una custom
 
         when(strategyRegistry.get(strategyName)).thenReturn(Optional.of(customStrategy));
+        when(playerRepository.findById(playerId)).thenReturn(Optional.of(crearPlayer(playerId)));
 
         PlayerMetricsSnapshot metrics = crearMetrics(playerId);
         PlayerTokenInventory inventory = crearInventory(playerId);
@@ -138,6 +141,7 @@ class QuoteRecalculationOrchestratorTest {
         Long playerId = 1L;
         MatchMetricsStrategy strategy = new MatchMetricsStrategy();
         when(strategyRegistry.getDefault()).thenReturn(strategy);
+        when(playerRepository.findById(playerId)).thenReturn(Optional.of(crearPlayer(playerId)));
         when(metricsRepository.findTopByPlayerIdOrderByPeriodEndDesc(playerId))
                 .thenReturn(Optional.empty());
 
@@ -153,6 +157,7 @@ class QuoteRecalculationOrchestratorTest {
         Long playerId = 1L;
         MatchMetricsStrategy strategy = new MatchMetricsStrategy();
         when(strategyRegistry.getDefault()).thenReturn(strategy);
+        when(playerRepository.findById(playerId)).thenReturn(Optional.of(crearPlayer(playerId)));
 
         PlayerMetricsSnapshot metrics = crearMetrics(playerId);
         when(metricsRepository.findTopByPlayerIdOrderByPeriodEndDesc(playerId))

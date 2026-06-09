@@ -1,5 +1,6 @@
-package com.unq.dapp.bolsa;
+package com.unq.dapp.bolsa.e2e;
 
+import com.unq.dapp.bolsa.DataInitializer;
 import com.unq.dapp.bolsa.auth.infrastructure.UserRepository;
 import com.unq.dapp.bolsa.catalog.domain.League;
 import com.unq.dapp.bolsa.catalog.domain.Player;

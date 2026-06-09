@@ -427,7 +427,7 @@ Exponer `/actuator/prometheus`. Métricas custom: contador de órdenes, duració
 - [ ] Swagger v3 completo con `@Operation`, `@ApiResponse`, `@Schema`
 - [ ] Surefire + Failsafe separados; JaCoCo en CI
 - [x] Sistema de cotización: al menos una `PricingStrategy` — issue #19 ✅ (`MatchMetricsStrategy v1.0`, domain + application implementados; controllers pendientes)
-- [ ] `GET /players/{id}/quotes/current`, historial, ranking
+- [x] `GET /players/{id}/quotes/current`, historial, ranking — issue #40 ✅
 - [x] `POST /quotes/recalculate` (ADMIN) — issue #41 ✅
 - [ ] Tag `v2.0.0`
 
@@ -601,9 +601,12 @@ La rama `entrega-1` contiene una implementación completa del proyecto en un ún
 - El `@BeforeAll` del IT crea jugador + `PlayerMetricsSnapshot` + `PlayerTokenInventory` — los tres son necesarios para que el orquestador calcule sin errores
 
 **Decisiones tomadas en issue #40 — endpoints REST de cotización (2026-06-09):**
-- `QuoteController` en `pricing/api/` con `@RequestMapping("/api/v1/players")` — coexiste con `PlayerController` porque los paths son distintos (`/{id}/quotes/*` y `/ranking`)
-- Ranking usa `?limit=` (no `?size=`) con default 10 y cap 50; resuelve nombre del jugador via `PlayerService.findById()` por cada Quote (N+1 aceptable con cap de 50)
+- `QuoteController` en `pricing/api/` con `@RequestMapping("/api/v1/players")` — coexiste con `PlayerController` sin conflicto porque los paths son distintos (`/{id}/quotes/*` y `/ranking`)
+- El endpoint `GET /players/ranking` acepta `?limit=` (no `?size=`) como parámetro con default 10 y cap 50 — evita abusos sin paginación pesada
+- Ranking resuelve el nombre del jugador llamando a `PlayerService.findById()` por cada Quote — N+1 aceptable dado que el ranking tiene cap en 50
+- Tests de integración (`QuoteIT`) usan `@TestInstance(PER_CLASS)` + `@BeforeAll` para seed de datos; `@BeforeEach` para obtener token — mismo patrón que el resto de ITs
 - 5 tests de integración: cotización actual, 404 sin cotización, historial completo, historial filtrado por fechas, ranking
+- `QuoteResponse.from(Quote)` accede a `quote.getValue().amount()` y `.currency()` — el value object `Money` es record, no entidad JPA
 
 **Decisiones tomadas en issue #19 — Sistema de cotización (2026-06-08):**
 - Domain y application layer implementados; controllers REST (pricing `api/`) pendientes para un issue separado

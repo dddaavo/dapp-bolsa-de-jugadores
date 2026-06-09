@@ -88,21 +88,22 @@ public class QuoteRecalculationOrchestrator {
     }
 
     private Quote recalculateForPlayer(Long playerId, PricingStrategy strategy) {
-        // Obtener última métrica del jugador
+        Player player = playerRepository.findById(playerId)
+                .orElseThrow(() -> new IllegalStateException("Player not found: " + playerId));
+
         PlayerMetricsSnapshot metrics = metricsRepository
                 .findTopByPlayerIdOrderByPeriodEndDesc(playerId)
                 .orElseThrow(() -> new IllegalStateException(
                         "No metrics found for player " + playerId));
 
-        // Obtener inventario para valor inicial
         PlayerTokenInventory inventory = inventoryRepository
                 .findById(playerId)
                 .orElseThrow(() -> new IllegalStateException(
                         "No inventory found for player " + playerId));
 
-        // Calcular cotización
         PricingContext context = new PricingContext(
-                Money.of(inventory.getInitialTokenValue())
+                Money.of(inventory.getInitialTokenValue()),
+                player.getPosition()
         );
         Money value = strategy.calculate(metrics, context);
 

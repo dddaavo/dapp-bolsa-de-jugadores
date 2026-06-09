@@ -9,7 +9,7 @@ class PricingContextTest {
     @Test
     void deberiaCrearContextoConValorInicial() {
         // When
-        PricingContext context = new PricingContext(Money.of(1.5));
+        PricingContext context = new PricingContext(Money.of(1.5), null);
 
         // Then
         assertThat(context.initialTokenValue().amount()).isEqualByComparingTo(Money.of(1.5).amount());
@@ -29,7 +29,7 @@ class PricingContextTest {
     void deberianSerIgualesDosContextosConMismoValor() {
         // Given
         PricingContext context1 = PricingContext.withInitialValue(1.0);
-        PricingContext context2 = new PricingContext(Money.of(1.0));
+        PricingContext context2 = new PricingContext(Money.of(1.0), null);
 
         // Then
         assertThat(context1).isEqualTo(context2);

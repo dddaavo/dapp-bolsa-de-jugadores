@@ -125,7 +125,7 @@ class QuoteRecalculationIT {
     }
 
     @Test
-    void deberiaAceptarEstrategiaEspecificaEnCuerpo() {
+    void deberiaAceptarEstrategiaMatchMetrics() {
         var body = Map.of("strategyName", "MatchMetrics");
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(adminToken);
@@ -138,6 +138,22 @@ class QuoteRecalculationIT {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).contains("MatchMetrics");
+    }
+
+    @Test
+    void deberiaAceptarEstrategiaPositionWeighted() {
+        var body = Map.of("strategyName", "PositionWeighted");
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(adminToken);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Map<String, String>> request = new HttpEntity<>(body, headers);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                baseUrl() + "/api/v1/quotes/recalculate",
+                HttpMethod.POST, request, String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).contains("PositionWeighted");
     }
 
     private String baseUrl() {

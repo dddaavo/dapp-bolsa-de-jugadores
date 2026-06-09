@@ -5,6 +5,11 @@ import com.unq.dapp.bolsa.catalog.domain.League;
 import com.unq.dapp.bolsa.catalog.domain.Player;
 import com.unq.dapp.bolsa.catalog.domain.Position;
 import com.unq.dapp.bolsa.catalog.infrastructure.PlayerRepository;
+import com.unq.dapp.bolsa.pricing.domain.Money;
+import com.unq.dapp.bolsa.pricing.domain.PlayerMetricsSnapshot;
+import com.unq.dapp.bolsa.pricing.domain.PlayerTokenInventory;
+import com.unq.dapp.bolsa.pricing.infrastructure.PlayerMetricsSnapshotRepository;
+import com.unq.dapp.bolsa.pricing.infrastructure.PlayerTokenInventoryRepository;
 import com.unq.dapp.bolsa.pricing.infrastructure.QuoteRepository;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -16,6 +21,9 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.*;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.Month;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,6 +43,12 @@ class QuoteRecalculationIT {
     private PlayerRepository playerRepository;
 
     @Autowired
+    private PlayerMetricsSnapshotRepository metricsRepository;
+
+    @Autowired
+    private PlayerTokenInventoryRepository inventoryRepository;
+
+    @Autowired
     private QuoteRepository quoteRepository;
 
     private String adminToken;
@@ -48,7 +62,25 @@ class QuoteRecalculationIT {
         player.setTeam("FC Barcelona");
         player.setLeague(League.LA_LIGA);
         player.setActive(true);
-        playerRepository.save(player);
+        Long playerId = playerRepository.save(player).getId();
+
+        PlayerMetricsSnapshot metrics = new PlayerMetricsSnapshot();
+        metrics.setPlayerId(playerId);
+        metrics.setPeriodStart(LocalDate.of(2026, Month.MAY, 1));
+        metrics.setPeriodEnd(LocalDate.of(2026, Month.JUNE, 1));
+        metrics.setGoals(8);
+        metrics.setAssists(5);
+        metrics.setMatches(10);
+        metrics.setMinutesPlayed(900);
+        metrics.setRating(BigDecimal.valueOf(7.8));
+        metricsRepository.save(metrics);
+
+        PlayerTokenInventory inventory = new PlayerTokenInventory();
+        inventory.setPlayerId(playerId);
+        inventory.setTotalEmitted(100);
+        inventory.setHeldBySystem(100);
+        inventory.setInitialTokenValue(BigDecimal.ONE);
+        inventoryRepository.save(inventory);
 
         var loginBody = Map.of("email", "system@bolsa.local", "password", "admin1234");
         ResponseEntity<AuthResponse> adminLogin = restTemplate.postForEntity(
@@ -95,7 +127,7 @@ class QuoteRecalculationIT {
 
     @Test
     void deberiaAceptarEstrategiaEspecificaEnCuerpo() {
-        var body = Map.of("strategyName", "matchMetrics");
+        var body = Map.of("strategyName", "MatchMetrics");
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(adminToken);
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -106,7 +138,7 @@ class QuoteRecalculationIT {
                 HttpMethod.POST, request, String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).contains("matchMetrics");
+        assertThat(response.getBody()).contains("MatchMetrics");
     }
 
     private String baseUrl() {

@@ -4,7 +4,6 @@ import com.unq.dapp.bolsa.auth.domain.User;
 import com.unq.dapp.bolsa.shared.error.DomainException;
 import com.unq.dapp.bolsa.trading.application.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -28,7 +27,6 @@ public class OrderController {
     @ApiResponse(responseCode = "201", description = "Compra ejecutada")
     @ApiResponse(responseCode = "400", description = "Request inválido o falta Idempotency-Key")
     @ApiResponse(responseCode = "401", description = "No autenticado")
-    @ApiResponse(responseCode = "409", description = "Idempotency-Key ya usada con request diferente")
     @ApiResponse(responseCode = "422", description = "Sin stock o sin cotización vigente")
     @PostMapping("/buy")
     public ResponseEntity<OrderResponse> buy(
@@ -45,7 +43,6 @@ public class OrderController {
     @ApiResponse(responseCode = "201", description = "Venta ejecutada")
     @ApiResponse(responseCode = "400", description = "Request inválido o falta Idempotency-Key")
     @ApiResponse(responseCode = "401", description = "No autenticado")
-    @ApiResponse(responseCode = "409", description = "Idempotency-Key ya usada con request diferente")
     @ApiResponse(responseCode = "422", description = "Sin holding suficiente o sin cotización vigente")
     @PostMapping("/sell")
     public ResponseEntity<OrderResponse> sell(

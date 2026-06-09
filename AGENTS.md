@@ -427,7 +427,7 @@ Exponer `/actuator/prometheus`. Métricas custom: contador de órdenes, duració
 - [ ] Swagger v3 completo con `@Operation`, `@ApiResponse`, `@Schema`
 - [ ] Surefire + Failsafe separados; JaCoCo en CI
 - [x] Sistema de cotización: al menos una `PricingStrategy` — issue #19 ✅ (`MatchMetricsStrategy v1.0`, domain + application implementados; controllers pendientes)
-- [ ] `GET /players/{id}/quotes/current`, historial, ranking
+- [x] `GET /players/{id}/quotes/current`, historial, ranking — issue #40 ✅
 - [ ] `POST /quotes/recalculate` (ADMIN)
 - [ ] Tag `v2.0.0`
 
@@ -506,7 +506,7 @@ Rutas públicas:
 
 ## 17. Estado actual del proyecto
 
-**Última actualización:** 2026-06-08
+**Última actualización:** 2026-06-09
 
 | Issue | Título | Estado |
 |---|---|---|
@@ -517,6 +517,7 @@ Rutas públicas:
 | #5 | Tests unitarios (Entrega 1) | ✅ Mergeado a `develop` (PR #13) |
 | #6 | SonarCloud — registro y quality gate | ✅ Mergeado a `develop` (PR #14) |
 | #19 | Sistema de cotización base (domain + application) | ✅ Mergeado a `develop` (PR #23, #24) |
+| #40 | endpoints REST de cotización (historial, actual y ranking) | ✅ Mergeado a `develop` (PR #??) |
 
 **Entrega 1 completada:** Todos los issues de E1 están mergeados en `develop` y en `main`. Tag v1.0.0 creado el 2026-06-01. Release publicado en GitHub: https://github.com/dddaavo/dapp-bolsa-de-jugadores/releases/tag/v1.0.0
 
@@ -526,6 +527,7 @@ Rutas públicas:
 
 **PRs de Entrega 2 (en curso):**
 - PR #23, #24 → mergeados a `develop` (issue #19 — pricing system)
+- PR #?? → mergeado a `develop` (issue #40 — quote REST endpoints)
 
 **Ramas activas:**
 - `develop` — integración; base de las features
@@ -587,6 +589,14 @@ La rama `entrega-1` contiene una implementación completa del proyecto en un ún
 - `JwtAuthFilter`: corregido bug real — token JWT malformado/expirado causaba HTTP 500; ahora se captura y devuelve 401
 - `ApiExceptionHandler`: parámetros `ex` usados con logging SLF4J (resuelve `java:S1172`)
 - `DomainException` + `PlayerNotFoundException`: `serialVersionUID` agregado (`java:S2057`)
+
+**Decisiones tomadas en issue #40 — endpoints REST de cotización (2026-06-09):**
+- `QuoteController` en `pricing/api/` con `@RequestMapping("/api/v1/players")` — coexiste con `PlayerController` sin conflicto porque los paths son distintos (`/{id}/quotes/*` y `/ranking`)
+- El endpoint `GET /players/ranking` acepta `?limit=` (no `?size=`) como parámetro con default 10 y cap 50 — evita abusos sin paginación pesada
+- Ranking resuelve el nombre del jugador llamando a `PlayerService.findById()` por cada Quote — N+1 aceptable dado que el ranking tiene cap en 50
+- Tests de integración (`QuoteIT`) usan `@TestInstance(PER_CLASS)` + `@BeforeAll` para seed de datos; `@BeforeEach` para obtener token — mismo patrón que el resto de ITs
+- 5 tests de integración: cotización actual, 404 sin cotización, historial completo, historial filtrado por fechas, ranking
+- `QuoteResponse.from(Quote)` accede a `quote.getValue().amount()` y `.currency()` — el value object `Money` es record, no entidad JPA
 
 **Decisiones tomadas en issue #19 — Sistema de cotización (2026-06-08):**
 - Domain y application layer implementados; controllers REST (pricing `api/`) pendientes para un issue separado

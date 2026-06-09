@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.time.Instant;
 import java.util.Date;
 import java.util.function.Function;
 
@@ -27,10 +28,11 @@ public class JwtService {
     }
 
     public String generateToken(UserDetails userDetails) {
+        Instant now = Instant.now();
         return Jwts.builder()
                 .subject(userDetails.getUsername())
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + accessTtlMinutes * 60_000L))
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusSeconds(accessTtlMinutes * 60L)))
                 .signWith(signingKey)
                 .compact();
     }
@@ -49,7 +51,7 @@ public class JwtService {
     }
 
     private boolean isTokenExpired(String token) {
-        return extractClaim(token, Claims::getExpiration).before(new Date());
+        return extractClaim(token, Claims::getExpiration).toInstant().isBefore(Instant.now());
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> resolver) {

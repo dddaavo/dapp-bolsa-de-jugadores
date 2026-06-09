@@ -70,8 +70,8 @@ class QuoteServiceTest {
     void deberiaObtenerHistorialEnRangoDeFechas() {
         // Given
         Long playerId = 1L;
-        LocalDate from = LocalDate.now().minusDays(7);
-        LocalDate to = LocalDate.now();
+        LocalDate from = LocalDate.of(2026, 1, 8);
+        LocalDate to = LocalDate.of(2026, 1, 15);
 
         Quote quote1 = crearQuote(playerId, Money.of(1.5));
         Quote quote2 = crearQuote(playerId, Money.of(1.6));
@@ -93,8 +93,8 @@ class QuoteServiceTest {
     void deberiaRetornarHistorialVacioSinCotizaciones() {
         // Given
         Long playerId = 1L;
-        LocalDate from = LocalDate.now().minusDays(7);
-        LocalDate to = LocalDate.now();
+        LocalDate from = LocalDate.of(2026, 1, 8);
+        LocalDate to = LocalDate.of(2026, 1, 15);
 
         when(quoteRepository.findByPlayerIdAndCalculatedAtBetweenOrderByCalculatedAtDesc(
                 eq(playerId), any(LocalDateTime.class), any(LocalDateTime.class)))
@@ -130,7 +130,7 @@ class QuoteServiceTest {
         Quote quote = new Quote();
         quote.setPlayerId(playerId);
         quote.setValue(value);
-        quote.setCalculatedAt(LocalDateTime.now());
+        quote.setCalculatedAt(LocalDateTime.of(2026, 1, 15, 12, 0));
         quote.setStrategyName("MatchMetrics");
         quote.setStrategyVersion("v1.0");
         return quote;

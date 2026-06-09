@@ -41,7 +41,8 @@ class MoneyTest {
     @Test
     void deberiaLanzarExcepcionConAmountNegativo() {
         // When/Then
-        assertThatThrownBy(() -> new Money(BigDecimal.valueOf(-5), "CREDITS"))
+        BigDecimal negativeAmount = BigDecimal.valueOf(-5);
+        assertThatThrownBy(() -> new Money(negativeAmount, "CREDITS"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("cannot be negative");
     }

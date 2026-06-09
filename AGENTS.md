@@ -428,7 +428,7 @@ Exponer `/actuator/prometheus`. Métricas custom: contador de órdenes, duració
 - [ ] Surefire + Failsafe separados; JaCoCo en CI
 - [x] Sistema de cotización: al menos una `PricingStrategy` — issue #19 ✅ (`MatchMetricsStrategy v1.0`, domain + application implementados; controllers pendientes)
 - [x] `GET /players/{id}/quotes/current`, historial, ranking — issue #40 ✅
-- [ ] `POST /quotes/recalculate` (ADMIN)
+- [x] `POST /quotes/recalculate` (ADMIN) — issue #41 ✅
 - [ ] Tag `v2.0.0`
 
 ### Entrega 3
@@ -518,6 +518,7 @@ Rutas públicas:
 | #6 | SonarCloud — registro y quality gate | ✅ Mergeado a `develop` (PR #14) |
 | #19 | Sistema de cotización base (domain + application) | ✅ Mergeado a `develop` (PR #23, #24) |
 | #40 | endpoints REST de cotización (historial, actual y ranking) | ✅ Mergeado a `develop` (PR #42) |
+| #41 | POST /quotes/recalculate (ADMIN) | ✅ Mergeado a `develop` (PR #43) |
 
 **Entrega 1 completada:** Todos los issues de E1 están mergeados en `develop` y en `main`. Tag v1.0.0 creado el 2026-06-01. Release publicado en GitHub: https://github.com/dddaavo/dapp-bolsa-de-jugadores/releases/tag/v1.0.0
 
@@ -528,6 +529,7 @@ Rutas públicas:
 **PRs de Entrega 2 (en curso):**
 - PR #23, #24 → mergeados a `develop` (issue #19 — pricing system)
 - PR #42 → mergeado a `develop` (issue #40 — quote REST endpoints)
+- PR #43 → mergeado a `develop` (issue #41 — recalculate endpoint)
 
 **Ramas activas:**
 - `develop` — integración; base de las features
@@ -589,6 +591,14 @@ La rama `entrega-1` contiene una implementación completa del proyecto en un ún
 - `JwtAuthFilter`: corregido bug real — token JWT malformado/expirado causaba HTTP 500; ahora se captura y devuelve 401
 - `ApiExceptionHandler`: parámetros `ex` usados con logging SLF4J (resuelve `java:S1172`)
 - `DomainException` + `PlayerNotFoundException`: `serialVersionUID` agregado (`java:S2057`)
+
+**Decisiones tomadas en issue #41 — POST /quotes/recalculate (2026-06-09):**
+- `RecalculationController` en `pricing/api/` con `@RequestMapping("/api/v1/quotes")`, separado de `QuoteController` para evitar conflictos de mapping
+- `@PreAuthorize("hasRole('ADMIN')")` a nivel de método — 403 si el token es USER, 401 si no hay token
+- Body de request opcional (`@RequestBody(required = false)`) — si se omite usa la estrategia activa por defecto del `StrategyRegistry`
+- Bug corregido: el controller calculaba `resolvedStrategy` (no-null) pero pasaba `strategyName` (puede ser null) al orquestador; corregido para pasar `resolvedStrategy` en ambos lugares
+- 5 tests de integración: 200 con ADMIN, 403 con USER, 401 sin token, recalculate con MatchMetrics, recalculate con PositionWeighted
+- El `@BeforeAll` del IT crea jugador + `PlayerMetricsSnapshot` + `PlayerTokenInventory` — los tres son necesarios para que el orquestador calcule sin errores
 
 **Decisiones tomadas en issue #40 — endpoints REST de cotización (2026-06-09):**
 - `QuoteController` en `pricing/api/` con `@RequestMapping("/api/v1/players")` — coexiste con `PlayerController` sin conflicto porque los paths son distintos (`/{id}/quotes/*` y `/ranking`)

@@ -1,8 +1,9 @@
 package com.unq.dapp.bolsa.scheduling;
 
 import com.unq.dapp.bolsa.pricing.application.QuoteRecalculationOrchestrator;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -19,27 +20,10 @@ class QuoteRecalculationJobTest {
     @InjectMocks
     private QuoteRecalculationJob job;
 
-    @Test
-    void deberiaLlamarAlOrchestratorConEstrategiaDefault() {
-        when(orchestrator.recalculateAll(null)).thenReturn(10);
-
-        job.execute();
-
-        verify(orchestrator).recalculateAll(null);
-    }
-
-    @Test
-    void deberiaCompletarSinExcepcionCuandoHayJugadores() {
-        when(orchestrator.recalculateAll(null)).thenReturn(50);
-
-        job.execute();
-
-        verify(orchestrator).recalculateAll(null);
-    }
-
-    @Test
-    void deberiaCompletarSinExcepcionCuandoNoHayJugadores() {
-        when(orchestrator.recalculateAll(null)).thenReturn(0);
+    @ParameterizedTest
+    @ValueSource(ints = {0, 10, 50})
+    void deberiaLlamarAlOrchestratorConEstrategiaDefault(int jugadoresRecalculados) {
+        when(orchestrator.recalculateAll(null)).thenReturn(jugadoresRecalculados);
 
         job.execute();
 

@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.Month;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -101,8 +102,8 @@ class MatchMetricsStrategyTest {
         metrics.setRating(rating);
         metrics.setMatches(matches);
         metrics.setMinutesPlayed(matches * 90);
-        metrics.setPeriodStart(LocalDate.of(2025, 12, 15));
-        metrics.setPeriodEnd(LocalDate.of(2026, 1, 15));
+        metrics.setPeriodStart(LocalDate.of(2025, Month.DECEMBER, 15));
+        metrics.setPeriodEnd(LocalDate.of(2026, Month.JANUARY, 15));
         return metrics;
     }
 }

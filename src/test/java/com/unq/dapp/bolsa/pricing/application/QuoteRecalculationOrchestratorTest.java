@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -191,8 +192,8 @@ class QuoteRecalculationOrchestratorTest {
         metrics.setAssists(5);
         metrics.setRating(BigDecimal.valueOf(7.5));
         metrics.setMatches(10);
-        metrics.setPeriodStart(LocalDate.of(2025, 12, 15));
-        metrics.setPeriodEnd(LocalDate.of(2026, 1, 15));
+        metrics.setPeriodStart(LocalDate.of(2025, Month.DECEMBER, 15));
+        metrics.setPeriodEnd(LocalDate.of(2026, Month.JANUARY, 15));
         return metrics;
     }
 

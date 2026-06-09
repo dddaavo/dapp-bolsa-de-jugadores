@@ -21,6 +21,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,7 +59,7 @@ class QuoteIT {
         Quote q1 = new Quote();
         q1.setPlayerId(playerId);
         q1.setValue(new Money(BigDecimal.valueOf(10.00), "CREDITS"));
-        q1.setCalculatedAt(LocalDateTime.of(2026, 5, 1, 8, 0));
+        q1.setCalculatedAt(LocalDateTime.of(2026, Month.MAY, 1, 8, 0));
         q1.setStrategyName("matchMetrics");
         q1.setStrategyVersion("1.0");
         quoteRepository.save(q1);
@@ -66,7 +67,7 @@ class QuoteIT {
         Quote q2 = new Quote();
         q2.setPlayerId(playerId);
         q2.setValue(new Money(BigDecimal.valueOf(15.50), "CREDITS"));
-        q2.setCalculatedAt(LocalDateTime.of(2026, 6, 1, 8, 0));
+        q2.setCalculatedAt(LocalDateTime.of(2026, Month.JUNE, 1, 8, 0));
         q2.setStrategyName("matchMetrics");
         q2.setStrategyVersion("1.0");
         quoteRepository.save(q2);

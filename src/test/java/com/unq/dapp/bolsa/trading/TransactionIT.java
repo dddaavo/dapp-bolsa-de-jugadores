@@ -72,7 +72,7 @@ class TransactionIT {
         Quote quote = new Quote();
         quote.setPlayerId(playerId);
         quote.setValue(new com.unq.dapp.bolsa.pricing.domain.Money(BigDecimal.valueOf(2.00), "CREDITS"));
-        quote.setCalculatedAt(LocalDateTime.now(ZoneOffset.UTC));
+        quote.setCalculatedAt(LocalDateTime.of(2026, 1, 1, 12, 0));
         quote.setStrategyName("MatchMetrics");
         quote.setStrategyVersion("v1.0");
         quoteRepository.save(quote);
@@ -154,6 +154,7 @@ class TransactionIT {
     }
 
     @Test
+    @SuppressWarnings("java:S8692") // el filtro compara contra la fecha de creación de las órdenes generadas en el test
     void deberiaFiltrarPorFechaDesde() {
         String today = LocalDate.now(ZoneOffset.UTC).toString();
 
@@ -166,6 +167,7 @@ class TransactionIT {
     }
 
     @Test
+    @SuppressWarnings("java:S8692") // el filtro compara contra la fecha de creación de las órdenes generadas en el test
     void deberiaRetornarVacioSiFromEsMañana() {
         String tomorrow = LocalDate.now(ZoneOffset.UTC).plusDays(1).toString();
 

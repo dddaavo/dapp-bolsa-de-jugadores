@@ -54,6 +54,6 @@ public class AuthService {
 
     private AuthResponse buildResponse(User user) {
         String token = jwtService.generateToken(user);
-        return new AuthResponse(token, jwtService.getAccessTtlMinutes() * 60L);
+        return new AuthResponse(user.getId(), token, jwtService.getAccessTtlMinutes() * 60L);
     }
 }

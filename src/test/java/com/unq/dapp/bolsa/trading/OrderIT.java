@@ -84,12 +84,14 @@ class OrderIT {
     void deberiaComprarTokensExitosamente() {
         long ordersBefore = orderRepository.count();
 
+        // when
         ResponseEntity<OrderResponse> response = restTemplate.exchange(
                 baseUrl() + "/api/v1/orders/buy",
                 HttpMethod.POST,
                 buyRequest(playerId, 5, UUID.randomUUID().toString()),
                 OrderResponse.class);
 
+        // then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody().orderId()).isNotNull();
         assertThat(response.getBody().quantity()).isEqualTo(5);
@@ -106,36 +108,42 @@ class OrderIT {
         restTemplate.exchange(baseUrl() + "/api/v1/orders/buy",
                 HttpMethod.POST, buyRequest(playerId, 3, UUID.randomUUID().toString()), OrderResponse.class);
 
+        // when
         ResponseEntity<OrderResponse> sellResponse = restTemplate.exchange(
                 baseUrl() + "/api/v1/orders/sell",
                 HttpMethod.POST,
                 sellRequest(playerId, 2, UUID.randomUUID().toString()),
                 OrderResponse.class);
 
+        // then
         assertThat(sellResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(sellResponse.getBody().quantity()).isEqualTo(2);
     }
 
     @Test
     void deberiaFallarSiNoHayStockSuficiente() {
+        // when
         ResponseEntity<String> response = restTemplate.exchange(
                 baseUrl() + "/api/v1/orders/buy",
                 HttpMethod.POST,
                 buyRequest(playerId, 999, UUID.randomUUID().toString()),
                 String.class);
 
+        // then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
         assertThat(response.getBody()).contains("INSUFFICIENT_STOCK");
     }
 
     @Test
     void deberiaFallarSiNohayHoldingSuficienteParaVender() {
+        // when
         ResponseEntity<String> response = restTemplate.exchange(
                 baseUrl() + "/api/v1/orders/sell",
                 HttpMethod.POST,
                 sellRequest(999L, 1, UUID.randomUUID().toString()),
                 String.class);
 
+        // then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
@@ -146,9 +154,11 @@ class OrderIT {
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<BuyRequest> request = new HttpEntity<>(new BuyRequest(playerId, 1), headers);
 
+        // when
         ResponseEntity<String> response = restTemplate.exchange(
                 baseUrl() + "/api/v1/orders/buy", HttpMethod.POST, request, String.class);
 
+        // then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).contains("MISSING_IDEMPOTENCY_KEY");
     }
@@ -156,15 +166,16 @@ class OrderIT {
     @Test
     void deberiaRetornarMismaOrdenConIdempotencyKeyRepetida() {
         String key = UUID.randomUUID().toString();
-
         ResponseEntity<OrderResponse> first = restTemplate.exchange(
                 baseUrl() + "/api/v1/orders/buy",
                 HttpMethod.POST, buyRequest(playerId, 1, key), OrderResponse.class);
 
+        // when
         ResponseEntity<OrderResponse> second = restTemplate.exchange(
                 baseUrl() + "/api/v1/orders/buy",
                 HttpMethod.POST, buyRequest(playerId, 1, key), OrderResponse.class);
 
+        // then
         assertThat(first.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(second.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(second.getBody().orderId()).isEqualTo(first.getBody().orderId());

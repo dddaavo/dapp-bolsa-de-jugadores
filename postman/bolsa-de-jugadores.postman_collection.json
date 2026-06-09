@@ -13,6 +13,11 @@
       "key": "token",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -46,7 +51,7 @@
           }
         },
         {
-          "name": "POST /auth/login  ← guarda token automáticamente",
+          "name": "POST /auth/login  ← guarda token y userId automáticamente",
           "event": [
             {
               "listen": "test",
@@ -56,6 +61,9 @@
                   "if (json.accessToken) {",
                   "  pm.collectionVariables.set('token', json.accessToken);",
                   "  console.log('Token guardado en variable {{token}}');",
+                  "}",
+                  "if (json.userId) {",
+                  "  pm.collectionVariables.set('userId', json.userId);",
                   "}"
                 ]
               }
@@ -104,7 +112,7 @@
       ]
     },
     {
-      "name": "Players (protegido)",
+      "name": "Jugadores",
       "item": [
         {
           "name": "GET /api/v1/players (sin token → 401)",
@@ -170,7 +178,7 @@
           }
         },
         {
-          "name": "GET /api/v1/players — filtro por equipo (Madrid)",
+          "name": "GET /api/v1/players — filtro por equipo",
           "request": {
             "method": "GET",
             "header": [
@@ -206,6 +214,246 @@
               { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "url": "{{baseUrl}}/api/v1/players/9999"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cotización",
+      "item": [
+        {
+          "name": "GET /api/v1/players/{id}/quotes/current — cotización vigente",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/v1/players/1/quotes/current"
+          }
+        },
+        {
+          "name": "GET /api/v1/players/{id}/quotes — historial completo",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/v1/players/1/quotes"
+          }
+        },
+        {
+          "name": "GET /api/v1/players/{id}/quotes — filtro por rango de fechas",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/players/1/quotes?from=2026-01-01&to=2026-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "players", "1", "quotes"],
+              "query": [
+                { "key": "from", "value": "2026-01-01" },
+                { "key": "to", "value": "2026-12-31" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/v1/players/ranking — top 10 por cotización",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/players/ranking?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "players", "ranking"],
+              "query": [
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/v1/players/ranking — filtro por estrategia",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/players/ranking?strategy=PositionWeighted&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "players", "ranking"],
+              "query": [
+                { "key": "strategy", "value": "PositionWeighted" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/quotes/recalculate — recalcular (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/v1/quotes/recalculate"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mercado",
+      "item": [
+        {
+          "name": "POST /api/v1/orders/buy — comprar tokens",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "{{$guid}}" }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/buy",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": 1,\n  \"quantity\": 5\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/orders/buy — sin Idempotency-Key → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/buy",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": 1,\n  \"quantity\": 5\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/orders/buy — stock insuficiente → 422",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "{{$guid}}" }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/buy",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": 1,\n  \"quantity\": 9999\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/orders/sell — vender tokens",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "{{$guid}}" }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/sell",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": 1,\n  \"quantity\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/orders/sell — sin holding → 422",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "{{$guid}}" }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/sell",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": 9999,\n  \"quantity\": 1\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "GET /api/v1/users/{id}/transactions — historial propio",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/transactions?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}", "transactions"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/v1/users/{id}/transactions — filtro por tipo BUY",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/transactions?type=BUY",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}", "transactions"],
+              "query": [
+                { "key": "type", "value": "BUY" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/v1/users/{id}/transactions — filtro por fecha",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/transactions?from=2026-01-01&to=2026-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}", "transactions"],
+              "query": [
+                { "key": "from", "value": "2026-01-01" },
+                { "key": "to", "value": "2026-12-31" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/v1/users/{id}/transactions — otro usuario → 403",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/v1/users/9999/transactions"
           }
         }
       ]

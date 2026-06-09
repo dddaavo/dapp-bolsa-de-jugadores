@@ -1,5 +1,6 @@
 package com.unq.dapp.bolsa.trading.application;
 
+import com.unq.dapp.bolsa.catalog.infrastructure.PlayerRepository;
 import com.unq.dapp.bolsa.pricing.application.QuoteService;
 import com.unq.dapp.bolsa.pricing.domain.PlayerTokenInventory;
 import com.unq.dapp.bolsa.pricing.infrastructure.PlayerTokenInventoryRepository;
@@ -7,16 +8,25 @@ import com.unq.dapp.bolsa.shared.error.DomainException;
 import com.unq.dapp.bolsa.trading.api.BuyRequest;
 import com.unq.dapp.bolsa.trading.api.OrderResponse;
 import com.unq.dapp.bolsa.trading.api.SellRequest;
+import com.unq.dapp.bolsa.trading.api.TransactionResponse;
 import com.unq.dapp.bolsa.trading.domain.Order;
 import com.unq.dapp.bolsa.trading.domain.OrderType;
 import com.unq.dapp.bolsa.trading.domain.TokenHolding;
 import com.unq.dapp.bolsa.trading.infrastructure.OrderRepository;
 import com.unq.dapp.bolsa.trading.infrastructure.TokenHoldingRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
@@ -25,15 +35,33 @@ public class OrderService {
     private final PlayerTokenInventoryRepository inventoryRepository;
     private final TokenHoldingRepository holdingRepository;
     private final OrderRepository orderRepository;
+    private final PlayerRepository playerRepository;
 
     public OrderService(QuoteService quoteService,
                         PlayerTokenInventoryRepository inventoryRepository,
                         TokenHoldingRepository holdingRepository,
-                        OrderRepository orderRepository) {
+                        OrderRepository orderRepository,
+                        PlayerRepository playerRepository) {
         this.quoteService = quoteService;
         this.inventoryRepository = inventoryRepository;
         this.holdingRepository = holdingRepository;
         this.orderRepository = orderRepository;
+        this.playerRepository = playerRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<TransactionResponse> getTransactions(Long userId, OrderType type,
+            LocalDate from, LocalDate to, Pageable pageable) {
+        Instant fromInstant = from != null ? from.atStartOfDay(ZoneOffset.UTC).toInstant() : null;
+        Instant toInstant = to != null ? to.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant() : null;
+
+        Page<Order> orders = orderRepository.findByUserIdWithFilters(userId, type, fromInstant, toInstant, pageable);
+
+        Set<Long> playerIds = orders.stream().map(Order::getPlayerId).collect(Collectors.toSet());
+        Map<Long, String> playerNames = playerRepository.findAllById(playerIds).stream()
+                .collect(Collectors.toMap(p -> p.getId(), p -> p.getName()));
+
+        return orders.map(o -> TransactionResponse.from(o, playerNames.getOrDefault(o.getPlayerId(), "Desconocido")));
     }
 
     @Transactional

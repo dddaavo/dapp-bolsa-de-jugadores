@@ -1,4 +1,4 @@
-package com.unq.dapp.bolsa.auth;
+package com.unq.dapp.bolsa.e2e.auth;
 
 import com.unq.dapp.bolsa.auth.api.AuthResponse;
 import org.junit.jupiter.api.Test;

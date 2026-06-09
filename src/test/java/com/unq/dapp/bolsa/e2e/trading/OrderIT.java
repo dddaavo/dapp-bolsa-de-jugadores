@@ -1,4 +1,4 @@
-package com.unq.dapp.bolsa.trading;
+package com.unq.dapp.bolsa.e2e.trading;
 
 import com.unq.dapp.bolsa.auth.api.AuthResponse;
 import com.unq.dapp.bolsa.catalog.domain.League;

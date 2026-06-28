@@ -65,16 +65,16 @@ com.unq.dapp.bolsa
 │   │   └── strategy/    # PricingStrategy (interface), MatchMetricsStrategy, PositionWeightedStrategy, StrategyRegistry
 │   └── infrastructure/
 ├── trading/             # Órdenes de compra/venta
-│   ├── api/
-│   ├── application/     # OrderService (Buy/Sell), IdempotencyService
-│   ├── domain/          # Order, OrderType, TokenHolding, OrderStatus
-│   └── infrastructure/  # OrderRepository, IdempotencyKeyRepository
-├── portfolio/           # Vista consolidada del usuario
+│   ├── api/             # OrderController, UserController (transactions)
+│   ├── application/     # OrderService (buy/sell + idempotencia interna, sin IdempotencyService aparte)
+│   ├── domain/          # Order, OrderType, TokenHolding
+│   └── infrastructure/  # OrderRepository, TokenHoldingRepository
+├── portfolio/           # (PLANIFICADO E3) Vista consolidada del usuario — aún no implementado
 ├── integration/
-│   ├── port/            # FootballDataPort, PlayerStatsPort (interfaces del dominio)
-│   ├── footballdata/    # FootballDataAdapter (RestClient, circuit breaker)
-│   └── whoscored/       # WhoScoredJsoupAdapter + WhoScoredFixturesFallback
-├── scheduling/          # QuoteRecalculationJob, ExternalDataSyncJob
+│   ├── port/            # PlayerStatsPort (FootballDataPort planificado E3)
+│   ├── footballdata/    # (PLANIFICADO E3) FootballDataAdapter — aún no implementado
+│   └── whoscored/       # WhoScoredAdapter (@Primary) + WhoScoredPlaywrightScraper + WhoScoredScraper (fallback)
+├── scheduling/          # QuoteRecalculationJob (ExternalDataSyncJob planificado E3)
 └── shared/
     ├── error/           # ApiExceptionHandler (RFC 7807), DomainException, ErrorCode
     ├── audit/           # AuditListener, auditable base entity
@@ -83,12 +83,14 @@ com.unq.dapp.bolsa
 
 **Regla:** los paquetes `domain` no importan Spring (excepto anotaciones JPA). Los `application.*Service` orquestan transacciones (`@Transactional`). Los `api.*Controller` son delgados: validan, delegan, mapean.
 
+> El diagrama describe el **diseño objetivo** (estado final del proyecto). A 2026-06-28, los nodos marcados `(PLANIFICADO E3)` todavía no existen en el código: `portfolio/`, `integration/footballdata/`, `FootballDataPort`, `ExternalDataSyncJob`. Ver §17 para el estado real por módulo.
+
 ### 3.2 Patrones clave
 
 - **Strategy** para cotización: `PricingStrategy.calculate(PlayerMetricsSnapshot) → QuoteValue`. `StrategyRegistry` resuelve por nombre. Cada `Quote` persiste `strategyName` y `strategyVersion` para auditoría.
 - **Port/Adapter** para cada integración externa. El service nunca importa `footballdata` directamente.
 - **Fallback chain** en scraping: `WhoScoredJsoupAdapter → WhoScoredFixturesFallback`. Orquestado con Resilience4j.
-- **Idempotency-Key**: órdenes POST requieren header `Idempotency-Key: <uuid>`.
+- **Idempotency-Key**: órdenes POST requieren header `Idempotency-Key: <uuid>`. La idempotencia se resuelve **dentro de `OrderService`** (lookup por `idempotencyKey` único en `Order`); no hay un `IdempotencyService` separado.
 - **Optimistic locking** con `@Version` en `TokenHolding`/`PlayerTokenInventory`.
 
 ### 3.3 Modelo de dominio
@@ -422,23 +424,24 @@ Exponer `/actuator/prometheus`. Métricas custom: contador de órdenes, duració
 - [x] Tag `v1.0.0` + Release Notes — ✅ completado el 2026-06-01
 
 ### Entrega 2
-- [ ] CI sin regresiones, H2 como DB principal
-- [ ] `DataInitializer`: 4 usuarios de prueba + cotizaciones iniciales — los 50 jugadores ya están (ver E1); completar escenario §8: 4 usuarios + compra de 5 jugadores + evolución de cotizaciones por liga
-- [ ] Swagger v3 completo con `@Operation`, `@ApiResponse`, `@Schema`
-- [ ] Surefire + Failsafe separados; JaCoCo en CI
-- [x] Sistema de cotización: al menos una `PricingStrategy` — issue #19 ✅ (`MatchMetricsStrategy v1.0`, domain + application implementados; controllers pendientes)
+- [x] CI sin regresiones, H2 como DB principal ✅
+- [x] `DataInitializer`: 4 usuarios de prueba + cotizaciones iniciales — issues #22, #39 ✅ (50 jugadores + métricas + historial de cotizaciones + escenario de trading)
+- [x] Swagger v3 completo con `@Operation`, `@ApiResponse`, `@Schema` — chore #38 ✅
+- [x] Surefire + Failsafe separados; JaCoCo en CI — chore #37 ✅ (separación desde el scaffold; reporte JaCoCo publicado como artifact)
+- [x] Sistema de cotización: al menos una `PricingStrategy` — issue #19 ✅ (`MatchMetricsStrategy v1.0` + `PositionWeightedStrategy v1.0`, domain + application + controllers)
 - [x] `GET /players/{id}/quotes/current`, historial, ranking — issue #40 ✅
 - [x] `POST /quotes/recalculate` (ADMIN) — issue #41 ✅
-- [ ] Tag `v2.0.0`
+- [ ] Tag `v2.0.0` — pendiente merge a `main`
 
 ### Entrega 3
-- [ ] ArchUnit en CI
-- [ ] AOP audit logging
-- [ ] Prometheus + Actuator
-- [ ] Mercado: buy/sell con idempotencia
-- [ ] Portfolio + historial de órdenes
-- [ ] Segunda estrategia de cotización
-- [ ] Integración Football-Data.org
+- [ ] ArchUnit en CI — falta dependencia en `pom.xml` y tests
+- [ ] AOP audit logging — no implementado (solo `AuditableEntity` para timestamps)
+- [ ] Prometheus + Actuator — falta `micrometer-registry-prometheus`; endpoint no expuesto
+- [x] Mercado: buy/sell con idempotencia — issue #33 ✅ (Idempotency-Key + optimistic locking; **faltan unit tests** de `OrderService`/controllers, solo cubierto por IT)
+- [x] Historial de órdenes — issue #34 ✅ (`GET /users/{id}/transactions`)
+- [ ] Portfolio — `GET /users/{id}/portfolio` no implementado (paquete `portfolio/` inexistente)
+- [x] Segunda estrategia de cotización — issue #31 ✅ (`PositionWeightedStrategy v1.0`)
+- [ ] Integración Football-Data.org — no implementado (adapter + `ExternalDataSyncJob` pendientes)
 - [ ] Tag `v3.0.0`
 
 ### Distribución por entrega
@@ -506,7 +509,7 @@ Rutas públicas:
 
 ## 17. Estado actual del proyecto
 
-**Última actualización:** 2026-06-09
+**Última actualización:** 2026-06-28
 
 | Issue | Título | Estado |
 |---|---|---|
@@ -517,19 +520,36 @@ Rutas públicas:
 | #5 | Tests unitarios (Entrega 1) | ✅ Mergeado a `develop` (PR #13) |
 | #6 | SonarCloud — registro y quality gate | ✅ Mergeado a `develop` (PR #14) |
 | #19 | Sistema de cotización base (domain + application) | ✅ Mergeado a `develop` (PR #23, #24) |
+| #22 | DataInitializer con métricas y cotizaciones iniciales | ✅ Mergeado a `develop` (PR #30) |
+| #31 | PositionWeightedStrategy v1.0 (segunda estrategia) | ✅ Mergeado a `develop` (PR #32) |
+| #33 | Mercado: compra/venta de tokens (buy/sell + idempotencia) | ✅ Mergeado a `develop` (PR #35) |
+| #34 | Historial de operaciones (GET /users/{id}/transactions) | ✅ Mergeado a `develop` (PR #36) |
 | #40 | endpoints REST de cotización (historial, actual y ranking) | ✅ Mergeado a `develop` (PR #42) |
 | #41 | POST /quotes/recalculate (ADMIN) | ✅ Mergeado a `develop` (PR #43) |
 
 **Entrega 1 completada:** Todos los issues de E1 están mergeados en `develop` y en `main`. Tag v1.0.0 creado el 2026-06-01. Release publicado en GitHub: https://github.com/dddaavo/dapp-bolsa-de-jugadores/releases/tag/v1.0.0
 
+**Entrega 2 — completa en `develop`, pendiente de cierre formal (merge a `main` + tag `v2.0.0`):** sistema de cotización con 2 estrategias, endpoints de quotes (current/historial/ranking), recalculate ADMIN, job semanal, DataInitializer expandido, Swagger completo y JaCoCo en CI.
+
+**Entrega 3 — en curso (~40%):** trading buy/sell (#33) e historial (#34) ya están en `develop`. **Pendiente:** `GET /users/{id}/portfolio`, AOP audit, Micrometer/Prometheus, ArchUnit, integración Football-Data.org + `ExternalDataSyncJob`, y unit tests del módulo trading (hoy solo cubierto por IT). Ver checklist §13.
+
 **PRs de Entrega 1:**
 - PR #7, #9, #10, #11, #12, #13, #14, #16, #17 → mergeados a `develop`
 - PR #18 → mergeado a `main` (Release v1.0.0)
 
-**PRs de Entrega 2 (en curso):**
-- PR #23, #24 → mergeados a `develop` (issue #19 — pricing system)
-- PR #42 → mergeado a `develop` (issue #40 — quote REST endpoints)
-- PR #43 → mergeado a `develop` (issue #41 — recalculate endpoint)
+**PRs de Entrega 2:**
+- PR #23, #24 → pricing system base (issue #19)
+- PR #25, #26, #27, #42 → endpoints de cotización y recalculate (issues #40, #41)
+- PR #30 → DataInitializer con métricas (issue #22)
+- PR #32 → PositionWeightedStrategy (issue #31)
+- PR #37, #38, #39 → JaCoCo en CI, Swagger completo, DataInitializer con escenario de trading
+- PR #44, #45 → fix de issues SonarCloud y reorganización de tests en `e2e/` vs unit
+
+**PRs de Entrega 3 (en curso):**
+- PR #35 → trading buy/sell (issue #33)
+- PR #36 → historial de operaciones (issue #34)
+
+> GitHub no tiene issues ni PRs abiertos al 2026-06-28: todo lo pendiente de E3 está sin trackear en el board.
 
 **Ramas activas:**
 - `develop` — integración; base de las features

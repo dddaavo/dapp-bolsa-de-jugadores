@@ -37,6 +37,8 @@ class QuoteRecalculationOrchestratorTest {
     private QuoteRepository quoteRepository;
     @Mock
     private StrategyRegistry strategyRegistry;
+    @Mock
+    private StrategyConfigService strategyConfigService;
 
     private QuoteRecalculationOrchestrator orchestrator;
 
@@ -44,7 +46,7 @@ class QuoteRecalculationOrchestratorTest {
     void setUp() {
         orchestrator = new QuoteRecalculationOrchestrator(
                 playerRepository, metricsRepository, inventoryRepository,
-                quoteRepository, strategyRegistry
+                quoteRepository, strategyRegistry, strategyConfigService
         );
     }
 
@@ -56,7 +58,7 @@ class QuoteRecalculationOrchestratorTest {
         List<Player> players = Arrays.asList(player1, player2);
 
         MatchMetricsStrategy strategy = new MatchMetricsStrategy();
-        when(strategyRegistry.getDefault()).thenReturn(strategy);
+        when(strategyConfigService.buildDefaultStrategy()).thenReturn(strategy);
         when(playerRepository.findAll()).thenReturn(players);
 
         for (Player player : players) {
@@ -86,7 +88,7 @@ class QuoteRecalculationOrchestratorTest {
         // Given
         Long playerId = 1L;
         MatchMetricsStrategy strategy = new MatchMetricsStrategy();
-        when(strategyRegistry.getDefault()).thenReturn(strategy);
+        when(strategyConfigService.buildDefaultStrategy()).thenReturn(strategy);
         when(playerRepository.findById(playerId)).thenReturn(Optional.of(crearPlayer(playerId)));
 
         PlayerMetricsSnapshot metrics = crearMetrics(playerId);
@@ -112,9 +114,10 @@ class QuoteRecalculationOrchestratorTest {
         // Given
         Long playerId = 1L;
         String strategyName = "CustomStrategy";
-        PricingStrategy customStrategy = new MatchMetricsStrategy(); // Simulamos una custom
+        PricingStrategy customStrategy = new MatchMetricsStrategy();
 
-        when(strategyRegistry.get(strategyName)).thenReturn(Optional.of(customStrategy));
+        when(strategyRegistry.exists(strategyName)).thenReturn(true);
+        when(strategyConfigService.buildStrategy(strategyName)).thenReturn(customStrategy);
         when(playerRepository.findById(playerId)).thenReturn(Optional.of(crearPlayer(playerId)));
 
         PlayerMetricsSnapshot metrics = crearMetrics(playerId);
@@ -132,7 +135,7 @@ class QuoteRecalculationOrchestratorTest {
 
         // Then
         assertThat(resultado).isNotNull();
-        verify(strategyRegistry).get(strategyName);
+        verify(strategyConfigService).buildStrategy(strategyName);
     }
 
     @Test
@@ -140,7 +143,7 @@ class QuoteRecalculationOrchestratorTest {
         // Given
         Long playerId = 1L;
         MatchMetricsStrategy strategy = new MatchMetricsStrategy();
-        when(strategyRegistry.getDefault()).thenReturn(strategy);
+        when(strategyConfigService.buildDefaultStrategy()).thenReturn(strategy);
         when(playerRepository.findById(playerId)).thenReturn(Optional.of(crearPlayer(playerId)));
         when(metricsRepository.findTopByPlayerIdOrderByPeriodEndDesc(playerId))
                 .thenReturn(Optional.empty());
@@ -156,7 +159,7 @@ class QuoteRecalculationOrchestratorTest {
         // Given
         Long playerId = 1L;
         MatchMetricsStrategy strategy = new MatchMetricsStrategy();
-        when(strategyRegistry.getDefault()).thenReturn(strategy);
+        when(strategyConfigService.buildDefaultStrategy()).thenReturn(strategy);
         when(playerRepository.findById(playerId)).thenReturn(Optional.of(crearPlayer(playerId)));
 
         PlayerMetricsSnapshot metrics = crearMetrics(playerId);
@@ -173,9 +176,8 @@ class QuoteRecalculationOrchestratorTest {
 
     @Test
     void deberiaLanzarExcepcionSiEstrategiaNoExiste() {
-        // Given
+        // Given — strategyRegistry.exists() returns false por default en Mockito
         String invalidStrategy = "NonExistent";
-        when(strategyRegistry.get(invalidStrategy)).thenReturn(Optional.empty());
 
         // When/Then
         assertThatThrownBy(() -> orchestrator.recalculateForPlayer(1L, invalidStrategy))

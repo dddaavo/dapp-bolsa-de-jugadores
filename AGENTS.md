@@ -28,7 +28,7 @@ Backend REST en Java/Spring Boot que modela un mercado de tokens de jugadores de
 | HTTP client | **Spring `RestClient`** (Spring 6.1+) | Sync, fluent, reemplazo moderno de RestTemplate |
 | Resiliencia | **Resilience4j** (circuit breaker + retry + bulkhead) | Tolerancia a fallas del proveedor externo |
 | Scraping | **Playwright Java** (Chromium headless) | WhoScored usa Cloudflare + JS rendering; Jsoup no funciona (declarado en pom.xml pero sin uso real) |
-| Caché | **Caffeine** (Spring Cache abstraction) | In-process, TTL configurable, sin infraestructura extra |
+| Caché | **Redis** (Spring Cache abstraction) | **Distribuida** — coherente bajo escalado horizontal (N instancias). Caffeine (in-process) daría una copia por nodo e inconsistencia; descartado. No implementada aún (issue #54) |
 | Scheduler | **Spring `@Scheduled`** (+ **ShedLock** si escalamos a N>1 instancias) | Cotización semanal, sync externo |
 | Mapeo | **MapStruct** | DTO ↔ Entity en compile-time, sin reflection |
 | Validación | **Jakarta Bean Validation** (`spring-boot-starter-validation`) | `@Valid` en controllers |
@@ -65,16 +65,16 @@ com.unq.dapp.bolsa
 │   │   └── strategy/    # PricingStrategy (interface), MatchMetricsStrategy, PositionWeightedStrategy, StrategyRegistry
 │   └── infrastructure/
 ├── trading/             # Órdenes de compra/venta
-│   ├── api/
-│   ├── application/     # OrderService (Buy/Sell), IdempotencyService
-│   ├── domain/          # Order, OrderType, TokenHolding, OrderStatus
-│   └── infrastructure/  # OrderRepository, IdempotencyKeyRepository
-├── portfolio/           # Vista consolidada del usuario
+│   ├── api/             # OrderController, UserController (transactions)
+│   ├── application/     # OrderService (buy/sell + idempotencia interna, sin IdempotencyService aparte)
+│   ├── domain/          # Order, OrderType, TokenHolding
+│   └── infrastructure/  # OrderRepository, TokenHoldingRepository
+├── portfolio/           # (PLANIFICADO E3) Vista consolidada del usuario — aún no implementado
 ├── integration/
-│   ├── port/            # FootballDataPort, PlayerStatsPort (interfaces del dominio)
-│   ├── footballdata/    # FootballDataAdapter (RestClient, circuit breaker)
-│   └── whoscored/       # WhoScoredJsoupAdapter + WhoScoredFixturesFallback
-├── scheduling/          # QuoteRecalculationJob, ExternalDataSyncJob
+│   ├── port/            # PlayerStatsPort (FootballDataPort planificado E3)
+│   ├── footballdata/    # (PLANIFICADO E3) FootballDataAdapter — aún no implementado
+│   └── whoscored/       # WhoScoredAdapter (@Primary) + WhoScoredPlaywrightScraper + WhoScoredScraper (fallback)
+├── scheduling/          # QuoteRecalculationJob (ExternalDataSyncJob planificado E3)
 └── shared/
     ├── error/           # ApiExceptionHandler (RFC 7807), DomainException, ErrorCode
     ├── audit/           # AuditListener, auditable base entity
@@ -83,12 +83,14 @@ com.unq.dapp.bolsa
 
 **Regla:** los paquetes `domain` no importan Spring (excepto anotaciones JPA). Los `application.*Service` orquestan transacciones (`@Transactional`). Los `api.*Controller` son delgados: validan, delegan, mapean.
 
+> El diagrama describe el **diseño objetivo** (estado final del proyecto). A 2026-06-28, los nodos marcados `(PLANIFICADO E3)` todavía no existen en el código: `portfolio/`, `integration/footballdata/`, `FootballDataPort`, `ExternalDataSyncJob`. Ver §17 para el estado real por módulo.
+
 ### 3.2 Patrones clave
 
 - **Strategy** para cotización: `PricingStrategy.calculate(PlayerMetricsSnapshot) → QuoteValue`. `StrategyRegistry` resuelve por nombre. Cada `Quote` persiste `strategyName` y `strategyVersion` para auditoría.
 - **Port/Adapter** para cada integración externa. El service nunca importa `footballdata` directamente.
 - **Fallback chain** en scraping: `WhoScoredJsoupAdapter → WhoScoredFixturesFallback`. Orquestado con Resilience4j.
-- **Idempotency-Key**: órdenes POST requieren header `Idempotency-Key: <uuid>`.
+- **Idempotency-Key**: órdenes POST requieren header `Idempotency-Key: <uuid>`. La idempotencia se resuelve **dentro de `OrderService`** (lookup por `idempotencyKey` único en `Order`); no hay un `IdempotencyService` separado.
 - **Optimistic locking** con `@Version` en `TokenHolding`/`PlayerTokenInventory`.
 
 ### 3.3 Modelo de dominio
@@ -302,6 +304,27 @@ Prefijos: `feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `docs:`
 
 - Un issue por bloque funcional (ver checklist §11)
 - Board de seguimiento en GitHub Projects: un proyecto **Board** por entrega
+- Las entregas E2 y E3 tienen **milestone** propio en GitHub (`Entrega 2`, `Entrega 3`) y label (`entrega-2`, `entrega-3`)
+
+### Release Notes y TAG (requerimiento de la cátedra)
+
+Convención obligatoria (fuente: documento de la cátedra en Drive):
+
+- **`RELEASE-NOTES.txt` en el root del repo**, **acumulativo** (un bloque por TAG, no se sobreescriben los anteriores). **Arranca en E2** — E1 no cuenta.
+- Cada bloque declara el **estado de cada punto de entrega** y **detalla lo no implementado**, con el formato exacto:
+  ```
+  ---------------------------------------------------------------------
+  TAG XXXXXX
+  ---------------------------------------------------------------------
+  NEW FEATURES (lo que están entregando y está funcionando):
+  * ...
+  NOTES (ej: funcionalidad que falta, alguna consideración especial):
+  * ...
+  KNOWN ISSUES (ej: errores conocidos en funcionalidad terminada):
+  * ...
+  ```
+- **Naming del TAG (doble esquema):** el **git tag** usa **semver** (`v2.0.0`, `v3.0.0`); el **header del bloque** en `RELEASE-NOTES.txt` usa el formato cátedra (`ENTREGA 2 - 1.0`). Re-tag de la misma entrega = **+1 al último dígito** (`v2.0.1` / `ENTREGA 2 - 1.1`).
+- El contador del header **arranca en 1.0 por cada entrega**.
 
 ---
 
@@ -336,6 +359,19 @@ Prefijos: `feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `docs:`
 ```
 
 Ambos plugins ya están configurados en `pom.xml` desde el scaffold (issue #1).
+
+### Profiles de testing (issue #48 — E2)
+
+**Decisión adoptada (2026-06-28):** separación literal de Spring profiles por fase de test.
+
+| Fase | Plugin Maven | Spring profile | Config file |
+|---|---|---|---|
+| Unit / Slice (`*Test.java`) | Surefire | `test` | `application-test.yml` |
+| e2e / Integration (`*IT.java`) | Failsafe | `e2e` | `application-e2e.yml` |
+
+Cada plugin declara su perfil vía `systemPropertyVariables` en `pom.xml`. Los `*IT.java` usan `@ActiveProfiles("e2e")`. El CI corre `./mvnw -B verify` sin pasar `-Dspring.profiles.active` globalmente.
+
+**Rationale:** la consigna pide "separar profiles para unitarios y e2e". Con Surefire/Failsafe ya se separa la ejecución, pero usar el mismo profile `test` para ambas fases no cumple la separación literal. El profile `e2e` usa su propia DB (`e2edb`) y permite configurar ITs de forma independiente en el futuro.
 
 ### Pautas de la materia
 
@@ -419,27 +455,44 @@ Exponer `/actuator/prometheus`. Métricas custom: contador de órdenes, duració
 - [x] `DataInitializer`: superusuario ADMIN + 50 jugadores reales via scraping WhoScored + 4 usuarios de prueba (alice, bob, charlie, diana) ✅
 - [x] `CODEOWNERS` — ✅ (branch protection en `main` pendiente de configuración manual en GitHub Settings)
 - [x] README con badge de CI y sección "How to run" ✅
-- [ ] Tag `v1.0.0` + Release Notes — pendiente merge a `main`
+- [x] Tag `v1.0.0` + Release Notes — ✅ completado el 2026-06-01
 
 ### Entrega 2
-- [ ] CI sin regresiones, H2 como DB principal
-- [ ] `DataInitializer`: 4 usuarios de prueba + cotizaciones iniciales — los 50 jugadores ya están (ver E1); completar escenario §8: 4 usuarios + compra de 5 jugadores + evolución de cotizaciones por liga
-- [ ] Swagger v3 completo con `@Operation`, `@ApiResponse`, `@Schema`
-- [ ] Surefire + Failsafe separados; JaCoCo en CI
-- [ ] Sistema de cotización: al menos una `PricingStrategy`
-- [ ] `GET /players/{id}/quotes/current`, historial, ranking
-- [ ] `POST /quotes/recalculate` (ADMIN)
-- [ ] Tag `v2.0.0`
+- [x] CI sin regresiones, H2 como DB principal ✅
+- [x] `DataInitializer`: 4 usuarios de prueba + cotizaciones iniciales — issues #22, #39 ✅ (50 jugadores + métricas + historial de cotizaciones + escenario de trading)
+- [x] Swagger v3 completo con `@Operation`, `@ApiResponse`, `@Schema` — chore #38 ✅
+- [x] Surefire + Failsafe separados; JaCoCo en CI — chore #37 ✅ (separación desde el scaffold; reporte JaCoCo publicado como artifact)
+- [x] Sistema de cotización: al menos una `PricingStrategy` — issue #19 ✅ (`MatchMetricsStrategy v1.0` + `PositionWeightedStrategy v1.0`, domain + application + controllers)
+- [x] `GET /players/{id}/quotes/current`, historial, ranking — issue #40 ✅
+- [x] `POST /quotes/recalculate` (ADMIN) — issue #41 ✅
+- [x] Mercado: compra/venta de tokens (la cátedra ubica buy/sell e historial en E2) — issues #33, #34 ✅
+- [x] **Cotización a una fecha dada** (point-in-time, `GET /players/{id}/quotes/at?date=`) — issue #47 ✅ (PR #63)
+- [x] Separar profiles de testing unit/e2e — issue #48 ✅ (PR #64)
+- [x] Unit tests del módulo trading — issue #49 ✅ (PR #65)
+- [x] Portfolio del usuario (`GET /users/{id}/portfolio`, enunciado §3.4 + escenario §8.3) — issue #58 ✅ (PR #66, #67)
+- [x] Estrategias configurables: `StrategyConfig` persistida + pesos — issue #62 ✅ (PR #67)
+- [x] `RELEASE-NOTES.txt` + Tag `v2.0.0` (ver convención §8) — issue #50 ✅ (2026-06-29)
 
 ### Entrega 3
-- [ ] ArchUnit en CI
-- [ ] AOP audit logging
-- [ ] Prometheus + Actuator
-- [ ] Mercado: buy/sell con idempotencia
-- [ ] Portfolio + historial de órdenes
-- [ ] Segunda estrategia de cotización
-- [ ] Integración Football-Data.org
-- [ ] Tag `v3.0.0`
+
+> La consigna oficial de E3 (Core + Funcionalidad) NO incluye `portfolio` ni `mercado buy/sell` (eso es E2 según cátedra) ni la 2da estrategia (ya hecha en #31). E3 = observabilidad + ArchUnit + optimización de ranking + métricas avanzadas, más los requisitos del enunciado de integración externa.
+
+**Core (consigna):**
+- [ ] Test de arquitectura con ArchUnit — issue #52 (obligatorio desde E3, §15)
+- [ ] Auditoría de WS (AOP + logback): timestamp/user/método/params/tiempo — issue #51
+- [ ] Prometheus + Actuator (endpoints de monitoreo y métricas) — issue #53
+- [ ] TAG + `RELEASE-NOTES.txt` (ver convención §8) — issue #57
+
+**Funcionalidad (consigna):**
+- [ ] Optimizar ranking para alta frecuencia → **caché distribuida Redis** — issue #54
+- [ ] Endpoint de métricas avanzadas (interpretación a definir) — issue #55
+
+**Requisitos del enunciado + arquitectura (E3):**
+- [x] Integración con API externa (§7) — **cubierto por WhoScored** (scraping + fallback = fuente externa con tolerancia a fallas). Football-Data #59 **cerrado** (sin consumidor en el dominio; reabrir solo si la cátedra exige una API REST)
+- [ ] Job de sincronización de datos externos (§4.5) — issue #61 (**sincroniza WhoScored**, no depende de #59)
+- [ ] Escalado horizontal N>1 (ShedLock, readiness, graceful shutdown) — issue #56 (**opcional/stretch**; lo habilita #54)
+- [ ] Deploy: perfil prod + Postgres + docker-compose + IaC/CD — issue #60 (**opcional**, no requisito de cátedra)
+- [ ] Tag `v3.0.0` (cierre)
 
 ### Distribución por entrega
 
@@ -506,7 +559,7 @@ Rutas públicas:
 
 ## 17. Estado actual del proyecto
 
-**Última actualización:** 2026-06-01
+**Última actualización:** 2026-06-28
 
 | Issue | Título | Estado |
 |---|---|---|
@@ -516,8 +569,49 @@ Rutas públicas:
 | #4 | Catálogo de jugadores + DataInitializer | ✅ Mergeado a `develop` (PR #12) |
 | #5 | Tests unitarios (Entrega 1) | ✅ Mergeado a `develop` (PR #13) |
 | #6 | SonarCloud — registro y quality gate | ✅ Mergeado a `develop` (PR #14) |
+| #19 | Sistema de cotización base (domain + application) | ✅ Mergeado a `develop` (PR #23, #24) |
+| #22 | DataInitializer con métricas y cotizaciones iniciales | ✅ Mergeado a `develop` (PR #30) |
+| #31 | PositionWeightedStrategy v1.0 (segunda estrategia) | ✅ Mergeado a `develop` (PR #32) |
+| #33 | Mercado: compra/venta de tokens (buy/sell + idempotencia) | ✅ Mergeado a `develop` (PR #35) |
+| #34 | Historial de operaciones (GET /users/{id}/transactions) | ✅ Mergeado a `develop` (PR #36) |
+| #40 | endpoints REST de cotización (historial, actual y ranking) | ✅ Mergeado a `develop` (PR #42) |
+| #41 | POST /quotes/recalculate (ADMIN) | ✅ Mergeado a `develop` (PR #43) |
+| #47 | Cotización a fecha dada (GET /players/{id}/quotes/at) | ✅ Mergeado a `develop` (PR #63) |
+| #48 | Separación profiles unit/e2e | ✅ Mergeado a `develop` (PR #64) |
+| #49 | Unit tests módulo trading | ✅ Mergeado a `develop` (PR #65) |
+| #58 | Portfolio del usuario (GET /users/{id}/portfolio) | ✅ Mergeado a `develop` (PR #66, #67) |
+| #62 | Estrategias configurables (StrategyConfig persistida) | ✅ Mergeado a `develop` (PR #67) |
+| #50 | Cierre E2: RELEASE-NOTES.txt + tag v2.0.0 | ✅ RELEASE-NOTES.txt en feature/release-e2; tag v2.0.0 pendiente |
 
-**Entrega 1 completada:** Todos los issues de E1 están mergeados en `develop`. Pendiente: merge a `main` + tag `v1.0.0` + release notes.
+**Entrega 1 completada:** Todos los issues de E1 están mergeados en `develop` y en `main`. Tag v1.0.0 creado el 2026-06-01. Release publicado en GitHub: https://github.com/dddaavo/dapp-bolsa-de-jugadores/releases/tag/v1.0.0
+
+**Entrega 2 completada (2026-06-29):** Todos los issues de E2 mergeados en `develop`. PR de RELEASE-NOTES.txt en process, pendiente merge a `main` y tag `v2.0.0`. Sistema de cotización con 2 estrategias configurables, endpoints de quotes (current/historial/ranking/at), recalculate ADMIN, job semanal, mercado buy/sell, portfolio, unit tests trading, separación profiles, DataInitializer expandido, Swagger completo, JaCoCo en CI.
+
+**Entrega 3 — pendiente:** ver checklist §13.
+
+**PRs de Entrega 1:**
+- PR #7, #9, #10, #11, #12, #13, #14, #16, #17 → mergeados a `develop`
+- PR #18 → mergeado a `main` (Release v1.0.0)
+
+**PRs de Entrega 2:**
+- PR #23, #24 → pricing system base (issue #19)
+- PR #25, #26, #27, #42 → endpoints de cotización y recalculate (issues #40, #41)
+- PR #30 → DataInitializer con métricas (issue #22)
+- PR #32 → PositionWeightedStrategy (issue #31)
+- PR #37, #38, #39 → JaCoCo en CI, Swagger completo, DataInitializer con escenario de trading
+- PR #44, #45 → fix de issues SonarCloud y reorganización de tests en `e2e/` vs unit
+- PR #63 → cotización a fecha dada (issue #47)
+- PR #64 → separación profiles unit/e2e (issue #48)
+- PR #65 → unit tests trading (issue #49)
+- PR #66, #67 → portfolio (issue #58) + estrategias configurables (issue #62)
+- PR #68 → refactor dominio anémico trading (en revisión)
+- PR de cierre → RELEASE-NOTES.txt + AGENTS.md (issue #50)
+
+**Backlog abierto:**
+- **Entrega 2** (milestone `Entrega 2`): ✅ CERRADA
+- **Entrega 3** (milestone `Entrega 3`): #51 (auditoría AOP), #52 (ArchUnit), #53 (Prometheus+Actuator), #54 (caché Redis), #55 (métricas avanzadas), #61 (sync job WhoScored), #56 (escalado horizontal, opcional), #60 (deploy, opcional), #57 (cierre E3)
+- **#59 (Football-Data) cerrado** — WhoScored cumple §7; reabrir solo si la cátedra exige una API REST.
+- Decisiones (sesión 2026-06-28): caché = Redis (#54); escalado #56 y deploy #60 = opcionales; #47 = endpoint point-in-time dedicado.
 
 **Ramas activas:**
 - `develop` — integración; base de las features
@@ -579,6 +673,34 @@ La rama `entrega-1` contiene una implementación completa del proyecto en un ún
 - `JwtAuthFilter`: corregido bug real — token JWT malformado/expirado causaba HTTP 500; ahora se captura y devuelve 401
 - `ApiExceptionHandler`: parámetros `ex` usados con logging SLF4J (resuelve `java:S1172`)
 - `DomainException` + `PlayerNotFoundException`: `serialVersionUID` agregado (`java:S2057`)
+
+**Decisiones tomadas en issue #41 — POST /quotes/recalculate (2026-06-09):**
+- `RecalculationController` en `pricing/api/` con `@RequestMapping("/api/v1/quotes")`, separado de `QuoteController` para evitar conflictos de mapping
+- `@PreAuthorize("hasRole('ADMIN')")` a nivel de método — 403 si el token es USER, 401 si no hay token
+- Body de request opcional (`@RequestBody(required = false)`) — si se omite usa la estrategia activa por defecto del `StrategyRegistry`
+- Bug corregido: el controller calculaba `resolvedStrategy` (no-null) pero pasaba `strategyName` (puede ser null) al orquestador; corregido para pasar `resolvedStrategy` en ambos lugares
+- 5 tests de integración: 200 con ADMIN, 403 con USER, 401 sin token, recalculate con MatchMetrics, recalculate con PositionWeighted
+- El `@BeforeAll` del IT crea jugador + `PlayerMetricsSnapshot` + `PlayerTokenInventory` — los tres son necesarios para que el orquestador calcule sin errores
+
+**Decisiones tomadas en issue #40 — endpoints REST de cotización (2026-06-09):**
+- `QuoteController` en `pricing/api/` con `@RequestMapping("/api/v1/players")` — coexiste con `PlayerController` sin conflicto porque los paths son distintos (`/{id}/quotes/*` y `/ranking`)
+- El endpoint `GET /players/ranking` acepta `?limit=` (no `?size=`) como parámetro con default 10 y cap 50 — evita abusos sin paginación pesada
+- Ranking resuelve el nombre del jugador llamando a `PlayerService.findById()` por cada Quote — N+1 aceptable dado que el ranking tiene cap en 50
+- Tests de integración (`QuoteIT`) usan `@TestInstance(PER_CLASS)` + `@BeforeAll` para seed de datos; `@BeforeEach` para obtener token — mismo patrón que el resto de ITs
+- 5 tests de integración: cotización actual, 404 sin cotización, historial completo, historial filtrado por fechas, ranking
+- `QuoteResponse.from(Quote)` accede a `quote.getValue().amount()` y `.currency()` — el value object `Money` es record, no entidad JPA
+
+**Decisiones tomadas en issue #19 — Sistema de cotización (2026-06-08):**
+- Domain y application layer implementados; controllers REST (pricing `api/`) pendientes para un issue separado
+- `Money` como value object inmutable con `BigDecimal` — no entidad JPA, sin columna propia; se almacena como columna `value` en `Quote`
+- `StrategyWeights` como value object con validación: pesos deben sumar exactamente 1.0 (delta ≤ 0.001)
+- `PricingContext` como record — contiene el `PlayerMetricsSnapshot` y datos auxiliares del jugador
+- `MatchMetricsStrategy v1.0`: normaliza métricas a [0,1], score = Σ peso_i · métrica_norm_i, resultado escalado a `Money`
+- `StrategyRegistry`: Spring-managed map de `PricingStrategy` beans por nombre — permite agregar estrategias nuevas sin modificar código existente
+- `QuoteRecalculationOrchestrator`: recorre todos los jugadores y calcula cotización usando la estrategia activa; no expuesto aún via HTTP
+- `PlayerTokenInventory`: entidad con `@Version` para optimistic locking; totalEmitted=100, initialTokenValue=1 crédito
+- Tests unitarios: 51 tests en total para el módulo pricing (MoneyTest 14, MatchMetricsStrategyTest 6, QuoteServiceTest 5, QuoteRecalculationOrchestratorTest 6, QuoteRepositoryTest 7, StrategyWeightsTest 6, PricingContextTest 3, StrategyRegistryTest 5)
+- Cobertura del módulo pricing subió de 78.4% a ≥80% para satisfacer el Quality Gate personalizado
 
 ---
 

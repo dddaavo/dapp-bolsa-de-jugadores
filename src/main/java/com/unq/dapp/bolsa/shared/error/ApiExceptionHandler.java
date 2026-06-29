@@ -1,6 +1,7 @@
 package com.unq.dapp.bolsa.shared.error;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
@@ -34,6 +35,12 @@ public class ApiExceptionHandler {
     public ResponseEntity<ErrorResponse> handleDomain(DomainException ex) {
         return ResponseEntity.status(ex.getStatus())
                 .body(new ErrorResponse(ex.getErrorCode(), ex.getMessage(), Instant.now()));
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+        return ResponseEntity.status(403)
+                .body(new ErrorResponse("FORBIDDEN", "Acceso denegado", Instant.now()));
     }
 
     @ExceptionHandler(BadCredentialsException.class)

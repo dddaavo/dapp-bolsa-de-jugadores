@@ -133,6 +133,9 @@
                     <includes>
                         <include>**/*Test.java</include>
                     </includes>
+                    <systemPropertyVariables>
+                        <spring.profiles.active>test</spring.profiles.active>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
 
@@ -144,6 +147,9 @@
                     <includes>
                         <include>**/*IT.java</include>
                     </includes>
+                    <systemPropertyVariables>
+                        <spring.profiles.active>e2e</spring.profiles.active>
+                    </systemPropertyVariables>
                 </configuration>
                 <executions>
                     <execution>

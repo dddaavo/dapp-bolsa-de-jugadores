@@ -1,0 +1,25 @@
+--------------------------------------------------------------------
+ENTREGA 2 - 1.0
+--------------------------------------------------------------------
+NEW FEATURES (lo que están entregando y está funcionando):
+* Sistema de cotización con 2 estrategias: MatchMetrics v1.0 (ponderación por goles/asistencias/rating) y PositionWeighted v1.0 (pesos distintos por posición FW/MF/DF/GK)
+* Pesos de estrategias configurables vía DB (StrategyConfig): GET /api/v1/strategies y PUT /api/v1/strategies/{name}/config (solo ADMIN)
+* Endpoints de cotización: GET /api/v1/players/{id}/quotes/current (vigente), GET /api/v1/players/{id}/quotes (historial por rango de fechas), GET /api/v1/players/{id}/quotes/at?date= (cotización a fecha dada)
+* Ranking de jugadores por cotización: GET /api/v1/players/ranking?strategy=&limit=
+* Recalculación manual de cotizaciones: POST /api/v1/quotes/recalculate (solo ADMIN)
+* Recalculación automática semanal vía job @Scheduled
+* Mercado de tokens: compra (POST /api/v1/orders/buy) y venta (POST /api/v1/orders/sell) con idempotencia via header Idempotency-Key
+* Historial de transacciones del usuario: GET /api/v1/users/{id}/transactions
+* Portfolio del usuario con cálculo de ganancia/pérdida: GET /api/v1/users/{id}/portfolio
+* DataInitializer con 50 jugadores reales (WhoScored), métricas de rendimiento, historial de cotizaciones y escenario de trading (4 usuarios con compras pre-cargadas)
+* Separación de profiles de testing: 'test' para unit tests (Surefire), 'e2e' para integration tests (Failsafe)
+* Cobertura con JaCoCo publicada como artifact en CI
+* Swagger v3 completo con @Operation, @ApiResponse y @Schema en todos los endpoints
+
+NOTES (consideraciones especiales):
+* H2 in-memory como base de datos principal (requerimiento de la cátedra para E2); sin migraciones, ddl-auto=create-drop
+* El scraping de WhoScored está desactivado por defecto (WHOSCORED_SCRAPING_ENABLED=false); se activa con variable de entorno para poblar jugadores reales. En ausencia de scraping, DataInitializer usa un fallback estático
+* La integración con Football-Data.org no fue implementada; el catálogo se nutre exclusivamente de WhoScored
+
+KNOWN ISSUES (errores conocidos en funcionalidad terminada):
+* Ninguno conocido

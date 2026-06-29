@@ -46,10 +46,6 @@ public class User extends AuditableEntity implements UserDetails {
         return id;
     }
 
-    public String getEmail() {
-        return email;
-    }
-
     public void setEmail(String email) {
         this.email = email;
     }

@@ -52,7 +52,8 @@ class AuthServiceTest {
     void deberiaLanzarExcepcionCuandoEmailYaExiste() {
         when(userRepository.existsByEmail("existente@test.com")).thenReturn(true);
 
-        assertThatThrownBy(() -> authService.register(new RegisterRequest("existente@test.com", "password123")))
+        var request = new RegisterRequest("existente@test.com", "password123");
+        assertThatThrownBy(() -> authService.register(request))
                 .isInstanceOf(DomainException.class)
                 .hasMessageContaining("existente@test.com");
     }
@@ -73,7 +74,8 @@ class AuthServiceTest {
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenThrow(new BadCredentialsException("credenciales inválidas"));
 
-        assertThatThrownBy(() -> authService.login(new LoginRequest("user@test.com", "wrongpass")))
+        var loginRequest = new LoginRequest("user@test.com", "wrongpass");
+        assertThatThrownBy(() -> authService.login(loginRequest))
                 .isInstanceOf(BadCredentialsException.class);
     }
 

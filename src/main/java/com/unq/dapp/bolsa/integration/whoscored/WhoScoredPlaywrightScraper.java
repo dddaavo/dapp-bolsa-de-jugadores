@@ -160,12 +160,7 @@ public class WhoScoredPlaywrightScraper implements WhoScoredScraper {
                 log.info("[WhoScored] {} filas encontradas para {}", rows.size(), league);
 
                 for (int i = 0; i < Math.min(rows.size(), MAX_PLAYERS_PER_LEAGUE); i++) {
-                    try {
-                        ScrapedPlayer player = parseRow(rows.get(i), league);
-                        if (player != null) result.add(player);
-                    } catch (Exception e) {
-                        log.warn("[WhoScored] Error parseando fila {}: {}", i, e.getMessage());
-                    }
+                    parseRowSafe(rows.get(i), league, i, result);
                 }
 
                 log.info("[WhoScored] Scraping completado para {}: {} jugadores extraídos",
@@ -180,7 +175,7 @@ public class WhoScoredPlaywrightScraper implements WhoScoredScraper {
                           CMD:        set NODE_TLS_REJECT_UNAUTHORIZED=0
                         y luego corré de nuevo: .\\mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=local""");
             } else {
-                log.error("[WhoScored] Scraping falló para {}: {}", league, e.getMessage());
+                log.error("[WhoScored] Scraping falló para {}: {}", league, e.getMessage(), e);
             }
         }
 
@@ -196,7 +191,7 @@ public class WhoScoredPlaywrightScraper implements WhoScoredScraper {
      * El pom.xml ya lo configura para spring-boot:run y los tests.
      * En IntelliJ: Run Configuration → VM options → pegar ese flag.
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "java:S3011"})
     private void tryInjectNodeTlsBypass() {
         if ("0".equals(System.getenv("NODE_TLS_REJECT_UNAUTHORIZED"))) {
             return; // Ya está seteado externamente
@@ -253,6 +248,15 @@ public class WhoScoredPlaywrightScraper implements WhoScoredScraper {
      */
     private static final Pattern PLAYER_ID_PATTERN = Pattern.compile("/players/(\\d+)/");
 
+    private void parseRowSafe(ElementHandle row, League league, int index, List<ScrapedPlayer> result) {
+        try {
+            ScrapedPlayer player = parseRow(row, league);
+            if (player != null) result.add(player);
+        } catch (Exception e) {
+            log.warn("[WhoScored] Error parseando fila {}: {}", index, e.getMessage());
+        }
+    }
+
     private ScrapedPlayer parseRow(ElementHandle row, League league) {
         ElementHandle mainTd = row.querySelector("td.overflow-text");
         if (mainTd == null) return null;
@@ -300,7 +304,7 @@ public class WhoScoredPlaywrightScraper implements WhoScoredScraper {
     private Position mapPosition(String posCode) {
         if (posCode == null || posCode.isEmpty()) return Position.FW;
         String first = posCode.split(",")[0].trim();
-        String base = first.replaceAll("\\(.*?\\)", "").trim().toUpperCase();
+        String base = first.replaceAll("\\([^)]*\\)", "").trim().toUpperCase();
 
         if (base.equals("GK"))                                             return Position.GK;
         if (base.startsWith("DM") || base.startsWith("M") || base.startsWith("AM")) return Position.MF;

@@ -1,4 +1,4 @@
-package com.unq.dapp.bolsa.auth;
+package com.unq.dapp.bolsa.e2e.auth;
 
 import com.unq.dapp.bolsa.auth.api.AuthResponse;
 import org.junit.jupiter.api.Test;
@@ -14,7 +14,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("test")
+@ActiveProfiles("e2e")
 class AuthIT {
 
     @LocalServerPort

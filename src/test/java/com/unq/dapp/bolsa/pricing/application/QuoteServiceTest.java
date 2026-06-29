@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.Month;
 import java.util.Arrays;
 import java.util.Collections;
@@ -125,6 +126,42 @@ class QuoteServiceTest {
 
         // Then
         assertThat(resultado).hasSize(3);
+    }
+
+    @Test
+    void deberiaObtenerCotizacionVigenteAUnaFecha() {
+        // Given
+        Long playerId = 1L;
+        LocalDate date = LocalDate.of(2026, Month.JUNE, 15);
+        Quote quote = crearQuote(playerId, Money.of(2.0));
+        when(quoteRepository.findTopByPlayerIdAndCalculatedAtLessThanEqualOrderByCalculatedAtDesc(
+                playerId, date.atTime(LocalTime.MAX)))
+                .thenReturn(Optional.of(quote));
+
+        // When
+        Optional<Quote> resultado = quoteService.getQuoteAt(playerId, date);
+
+        // Then
+        assertThat(resultado).isPresent();
+        assertThat(resultado.get().getValue().amount()).isEqualByComparingTo("2.0");
+        verify(quoteRepository).findTopByPlayerIdAndCalculatedAtLessThanEqualOrderByCalculatedAtDesc(
+                playerId, date.atTime(LocalTime.MAX));
+    }
+
+    @Test
+    void deberiaRetornarEmptyCuandoNoHayCotizacionAntesDeLaFecha() {
+        // Given
+        Long playerId = 1L;
+        LocalDate date = LocalDate.of(2020, Month.JANUARY, 1);
+        when(quoteRepository.findTopByPlayerIdAndCalculatedAtLessThanEqualOrderByCalculatedAtDesc(
+                playerId, date.atTime(LocalTime.MAX)))
+                .thenReturn(Optional.empty());
+
+        // When
+        Optional<Quote> resultado = quoteService.getQuoteAt(playerId, date);
+
+        // Then
+        assertThat(resultado).isEmpty();
     }
 
     private Quote crearQuote(Long playerId, Money value) {

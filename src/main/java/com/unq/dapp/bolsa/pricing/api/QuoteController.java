@@ -42,6 +42,24 @@ public class QuoteController {
         );
     }
 
+    @Operation(summary = "Cotización vigente de un jugador a una fecha dada")
+    @ApiResponse(responseCode = "200", description = "Cotización encontrada")
+    @ApiResponse(responseCode = "400", description = "Fecha inválida o ausente")
+    @ApiResponse(responseCode = "404", description = "Sin cotización para el jugador a esa fecha")
+    @ApiResponse(responseCode = "401", description = "No autenticado")
+    @GetMapping("/{id}/quotes/at")
+    public ResponseEntity<QuoteResponse> getAt(
+            @PathVariable Long id,
+            @Parameter(description = "Fecha (yyyy-MM-dd)", required = true)
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+    ) {
+        return ResponseEntity.ok(
+                quoteService.getQuoteAt(id, date)
+                        .map(QuoteResponse::from)
+                        .orElseThrow(() -> new QuoteNotFoundException(id))
+        );
+    }
+
     @Operation(summary = "Historial de cotizaciones de un jugador")
     @ApiResponse(responseCode = "200", description = "Historial de cotizaciones")
     @ApiResponse(responseCode = "401", description = "No autenticado")

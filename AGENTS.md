@@ -474,9 +474,9 @@ Exponer `/actuator/prometheus`. Métricas custom: contador de órdenes, duració
 - [ ] Endpoint de métricas avanzadas (interpretación a definir) — issue #55
 
 **Requisitos del enunciado + arquitectura (E3):**
-- [ ] Integración con API externa (Football-Data.org, §7) — issue #59
-- [ ] Job de sincronización de datos externos (§4.5) — issue #61 (depende de #59)
-- [ ] Escalado horizontal N>1 (ShedLock, readiness, graceful shutdown) — issue #56 (depende de #54)
+- [x] Integración con API externa (§7) — **cubierto por WhoScored** (scraping + fallback = fuente externa con tolerancia a fallas). Football-Data #59 **cerrado** (sin consumidor en el dominio; reabrir solo si la cátedra exige una API REST)
+- [ ] Job de sincronización de datos externos (§4.5) — issue #61 (**sincroniza WhoScored**, no depende de #59)
+- [ ] Escalado horizontal N>1 (ShedLock, readiness, graceful shutdown) — issue #56 (**opcional/stretch**; lo habilita #54)
 - [ ] Deploy: perfil prod + Postgres + docker-compose + IaC/CD — issue #60 (**opcional**, no requisito de cátedra)
 - [ ] Tag `v3.0.0` (cierre)
 
@@ -587,8 +587,9 @@ Rutas públicas:
 
 **Backlog abierto (creado el 2026-06-28, con contexto completo en cada issue):**
 - **Entrega 2** (milestone `Entrega 2`): #47 (cotización a fecha dada — grave), #48 (profiles unit/e2e), #49 (unit tests trading), #58 (portfolio), #50 (cierre + `RELEASE-NOTES.txt` + tag `v2.0.0`)
-- **Entrega 3** (milestone `Entrega 3`): #51 (auditoría AOP), #52 (ArchUnit), #53 (Prometheus+Actuator), #54 (caché Redis) → #56 (escalado horizontal), #55 (métricas avanzadas), #59 (Football-Data) → #61 (sync job), #60 (deploy, opcional), #57 (cierre E3)
-- Dependencias enlazadas: #54→#56, #59→#61.
+- **Entrega 3** (milestone `Entrega 3`): #51 (auditoría AOP), #52 (ArchUnit), #53 (Prometheus+Actuator), #54 (caché Redis), #55 (métricas avanzadas), #61 (sync job WhoScored), #56 (escalado horizontal, opcional), #60 (deploy, opcional), #57 (cierre E3)
+- **#59 (Football-Data) cerrado** — WhoScored cumple §7; reabrir solo si la cátedra exige una API REST.
+- Decisiones (sesión 2026-06-28): caché = Redis (#54); escalado #56 y deploy #60 = opcionales; #47 = endpoint point-in-time dedicado.
 
 **Ramas activas:**
 - `develop` — integración; base de las features

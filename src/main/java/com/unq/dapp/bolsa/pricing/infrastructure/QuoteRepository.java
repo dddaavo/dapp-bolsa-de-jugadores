@@ -37,5 +37,8 @@ public interface QuoteRepository extends JpaRepository<Quote, Long> {
            "WHERE q2.playerId = q.playerId AND q2.strategyName = :strategyName) " +
            "ORDER BY q.valueAmount DESC")
     List<Quote> findLatestPerPlayerByStrategyOrderByValueDesc(@Param("strategyName") String strategyName, Pageable pageable);
+
+    @Query("SELECT DISTINCT q.playerId FROM Quote q")
+    List<Long> findDistinctPlayerIds();
 }
 

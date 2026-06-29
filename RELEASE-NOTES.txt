@@ -2,24 +2,47 @@
 ENTREGA 2 - 1.0
 --------------------------------------------------------------------
 NEW FEATURES (lo que están entregando y está funcionando):
-* Sistema de cotización con 2 estrategias: MatchMetrics v1.0 (ponderación por goles/asistencias/rating) y PositionWeighted v1.0 (pesos distintos por posición FW/MF/DF/GK)
-* Pesos de estrategias configurables vía DB (StrategyConfig): GET /api/v1/strategies y PUT /api/v1/strategies/{name}/config (solo ADMIN)
-* Endpoints de cotización: GET /api/v1/players/{id}/quotes/current (vigente), GET /api/v1/players/{id}/quotes (historial por rango de fechas), GET /api/v1/players/{id}/quotes/at?date= (cotización a fecha dada)
-* Ranking de jugadores por cotización: GET /api/v1/players/ranking?strategy=&limit=
-* Recalculación manual de cotizaciones: POST /api/v1/quotes/recalculate (solo ADMIN)
+
+[Requerido E2 — Sistema de cotización]
+* Estrategia MatchMetrics v1.0: cotización basada en goles, asistencias y rating ponderados
+* Estrategia PositionWeighted v1.0: pesos distintos según posición (FW/MF/DF/GK)
+* GET /api/v1/players/{id}/quotes/current — cotización vigente de un jugador
+* GET /api/v1/players/{id}/quotes — historial de cotizaciones con filtro por rango de fechas
+* GET /api/v1/players/ranking?strategy=&limit= — ranking de jugadores por cotización
+* POST /api/v1/quotes/recalculate (solo ADMIN) — recalculación manual de cotizaciones
 * Recalculación automática semanal vía job @Scheduled
-* Mercado de tokens: compra (POST /api/v1/orders/buy) y venta (POST /api/v1/orders/sell) con idempotencia via header Idempotency-Key
-* Historial de transacciones del usuario: GET /api/v1/users/{id}/transactions
-* Portfolio del usuario con cálculo de ganancia/pérdida: GET /api/v1/users/{id}/portfolio
-* DataInitializer con 50 jugadores reales (WhoScored), métricas de rendimiento, historial de cotizaciones y escenario de trading (4 usuarios con compras pre-cargadas)
+
+[Requerido E2 — Testing y calidad]
 * Separación de profiles de testing: 'test' para unit tests (Surefire), 'e2e' para integration tests (Failsafe)
 * Cobertura con JaCoCo publicada como artifact en CI
 * Swagger v3 completo con @Operation, @ApiResponse y @Schema en todos los endpoints
+* DataInitializer con 50 jugadores reales (WhoScored), métricas de rendimiento, historial de
+  cotizaciones y escenario de trading (4 usuarios con compras pre-cargadas)
+
+[Adelantado de E3 — Mercado de tokens]
+* POST /api/v1/orders/buy — compra de tokens con idempotencia via header Idempotency-Key
+* POST /api/v1/orders/sell — venta de tokens con idempotencia via header Idempotency-Key
+* GET /api/v1/users/{id}/transactions — historial de transacciones del usuario
+
+[Adelantado de E3 — Portfolio]
+* GET /api/v1/users/{id}/portfolio — posiciones actuales del usuario con cálculo de
+  ganancia/pérdida por jugador
+
+[Extras no planificados]
+* GET /api/v1/players/{id}/quotes/at?date= — cotización a una fecha dada (point-in-time)
+* GET /api/v1/strategies y PUT /api/v1/strategies/{name}/config (solo ADMIN) — pesos de
+  estrategias configurables vía DB (StrategyConfig)
+* Unit tests del módulo trading (OrderService, OrderController, UserController)
 
 NOTES (consideraciones especiales):
-* H2 in-memory como base de datos principal (requerimiento de la cátedra para E2); sin migraciones, ddl-auto=create-drop
-* El scraping de WhoScored está desactivado por defecto (WHOSCORED_SCRAPING_ENABLED=false); se activa con variable de entorno para poblar jugadores reales. En ausencia de scraping, DataInitializer usa un fallback estático
-* La integración con Football-Data.org no fue implementada; el catálogo se nutre exclusivamente de WhoScored
+* H2 in-memory como base de datos principal (requerimiento de la cátedra para E2);
+  sin migraciones, ddl-auto=create-drop
+* El scraping de WhoScored está desactivado por defecto (WHOSCORED_SCRAPING_ENABLED=false);
+  se activa con variable de entorno. En ausencia de scraping, DataInitializer usa un
+  fallback estático con datos precargados
+* La integración con Football-Data.org no fue implementada; el catálogo se nutre
+  exclusivamente de WhoScored
+* Los módulos de Mercado y Portfolio están adelantados respecto al plan original de E3
 
 KNOWN ISSUES (errores conocidos en funcionalidad terminada):
 * Ninguno conocido

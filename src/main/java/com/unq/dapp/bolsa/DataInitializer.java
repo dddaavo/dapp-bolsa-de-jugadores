@@ -20,7 +20,6 @@ import com.unq.dapp.bolsa.pricing.infrastructure.PlayerTokenInventoryRepository;
 import com.unq.dapp.bolsa.pricing.infrastructure.QuoteRepository;
 import com.unq.dapp.bolsa.pricing.infrastructure.StrategyConfigRepository;
 import com.unq.dapp.bolsa.trading.domain.Order;
-import com.unq.dapp.bolsa.trading.domain.OrderType;
 import com.unq.dapp.bolsa.trading.domain.TokenHolding;
 import com.unq.dapp.bolsa.trading.infrastructure.OrderRepository;
 import com.unq.dapp.bolsa.trading.infrastructure.TokenHoldingRepository;
@@ -279,26 +278,13 @@ public class DataInitializer implements ApplicationRunner {
         PlayerTokenInventory inventory = inventoryRepository.findById(player.getId()).orElse(null);
         if (inventory == null || inventory.getHeldBySystem() < TOKENS_PER_PURCHASE) return;
 
-        inventory.setHeldBySystem(inventory.getHeldBySystem() - TOKENS_PER_PURCHASE);
+        inventory.reserve(TOKENS_PER_PURCHASE);
         inventoryRepository.save(inventory);
 
-        TokenHolding holding = new TokenHolding();
-        holding.setUserId(user.getId());
-        holding.setPlayerId(player.getId());
-        holding.setQuantity(TOKENS_PER_PURCHASE);
-        holding.setAvgBuyPrice(BigDecimal.ONE);
-        holdingRepository.save(holding);
+        holdingRepository.save(TokenHolding.createNew(user.getId(), player.getId(), TOKENS_PER_PURCHASE, BigDecimal.ONE));
 
-        Order order = new Order();
-        order.setUserId(user.getId());
-        order.setPlayerId(player.getId());
-        order.setType(OrderType.BUY);
-        order.setQuantity(TOKENS_PER_PURCHASE);
-        order.setUnitPrice(BigDecimal.ONE);
-        order.setTotalAmount(BigDecimal.valueOf(TOKENS_PER_PURCHASE));
-        order.setIdempotencyKey(
-                UUID.nameUUIDFromBytes((user.getUsername() + ":" + player.getId()).getBytes()).toString());
-        orderRepository.save(order);
+        String idempotencyKey = UUID.nameUUIDFromBytes((user.getUsername() + ":" + player.getId()).getBytes()).toString();
+        orderRepository.save(Order.createBuy(user.getId(), player.getId(), TOKENS_PER_PURCHASE, BigDecimal.ONE, idempotencyKey));
     }
 
     private Player toPlayer(ScrapedPlayer scraped) {

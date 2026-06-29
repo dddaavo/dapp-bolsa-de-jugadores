@@ -33,3 +33,7 @@ quote:
   recalc:
     cron: "-"
 
+external:
+  sync:
+    cron: "-"
+

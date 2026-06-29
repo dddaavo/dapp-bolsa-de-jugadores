@@ -14,6 +14,16 @@ public record ScrapedPlayer(
         String team,
         Position position,
         League league,
-        String nationality
-) {}
-
+        String nationality,
+        int goals,
+        int assists,
+        int matches,
+        int minutesPlayed,
+        double rating
+) {
+    /** Constructor sin métricas — usa ceros como valores por defecto. */
+    public ScrapedPlayer(String whoScoredId, String name, String team,
+                         Position position, League league, String nationality) {
+        this(whoScoredId, name, team, position, league, nationality, 0, 0, 0, 0, 0.0);
+    }
+}

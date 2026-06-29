@@ -26,4 +26,6 @@ public interface PlayerRepository extends JpaRepository<Player, Long> {
     );
 
     Optional<Player> findByIdAndActiveTrue(Long id);
+
+    Optional<Player> findByExternalId(String externalId);
 }

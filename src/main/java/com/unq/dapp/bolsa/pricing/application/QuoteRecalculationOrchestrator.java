@@ -10,6 +10,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,6 +60,7 @@ public class QuoteRecalculationOrchestrator {
      * @param strategyName  Nombre de la estrategia a usar (null = default)
      * @return Cantidad de jugadores recalculados
      */
+    @CacheEvict(cacheNames = "ranking", allEntries = true)
     @Transactional
     public int recalculateAll(String strategyName) {
         return recalculationTimer.record(() -> {

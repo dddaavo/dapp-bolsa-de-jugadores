@@ -22,3 +22,8 @@ whoscored:
   scraping:
     enabled: false
 
+management:
+  health:
+    redis:
+      enabled: false
+

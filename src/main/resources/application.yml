@@ -52,6 +52,10 @@ quote:
   recalc:
     cron: ${QUOTE_RECALC_CRON:0 0 3 * * MON}
 
+external:
+  sync:
+    cron: ${EXTERNAL_SYNC_CRON:0 0 2 * * *}
+
 app:
   seed:
     admin-password: ${APP_SEED_ADMIN_PASSWORD:admin1234}

@@ -175,7 +175,7 @@ public class WhoScoredPlaywrightScraper implements WhoScoredScraper {
                           CMD:        set NODE_TLS_REJECT_UNAUTHORIZED=0
                         y luego corré de nuevo: .\\mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=local""");
             } else {
-                log.error("[WhoScored] Scraping falló para {}: {}", league, e.getMessage());
+                log.error("[WhoScored] Scraping falló para {}: {}", league, e.getMessage(), e);
             }
         }
 

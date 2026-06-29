@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -48,6 +49,12 @@ public class QuoteService {
         return quoteRepository.findByPlayerIdAndCalculatedAtBetweenOrderByCalculatedAtDesc(
             playerId, fromDateTime, toDateTime
         );
+    }
+
+    public Optional<Quote> getQuoteAt(Long playerId, LocalDate date) {
+        LocalDateTime until = date.atTime(LocalTime.MAX);
+        return quoteRepository.findTopByPlayerIdAndCalculatedAtLessThanEqualOrderByCalculatedAtDesc(
+                playerId, until);
     }
 
     public List<Quote> getAllQuotes(Long playerId) {

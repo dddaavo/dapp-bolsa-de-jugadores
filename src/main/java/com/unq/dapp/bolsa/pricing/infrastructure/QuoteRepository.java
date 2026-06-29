@@ -24,6 +24,9 @@ public interface QuoteRepository extends JpaRepository<Quote, Long> {
             LocalDateTime to
     );
 
+    Optional<Quote> findTopByPlayerIdAndCalculatedAtLessThanEqualOrderByCalculatedAtDesc(
+            Long playerId, LocalDateTime dateTime);
+
     @Query("SELECT q FROM Quote q WHERE q.calculatedAt = " +
            "(SELECT MAX(q2.calculatedAt) FROM Quote q2 WHERE q2.playerId = q.playerId) " +
            "ORDER BY q.valueAmount DESC")

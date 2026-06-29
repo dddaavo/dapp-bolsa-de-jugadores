@@ -126,6 +126,28 @@ class QuoteIT {
     }
 
     @Test
+    void deberiaRetornarCotizacionVigenteAUnaFecha() {
+        // q1 fue el 2026-05-01, q2 el 2026-06-01; pidiendo 2026-05-15 debe devolver q1 (10.00)
+        ResponseEntity<String> response = restTemplate.exchange(
+                baseUrl() + "/api/v1/players/" + playerId + "/quotes/at?date=2026-05-15",
+                HttpMethod.GET, requestConToken(), String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).contains("10.0");
+        assertThat(response.getBody()).doesNotContain("15.5");
+    }
+
+    @Test
+    void deberiaRetornar404CuandoNoHayCotizacionAntesDeLaFecha() {
+        ResponseEntity<String> response = restTemplate.exchange(
+                baseUrl() + "/api/v1/players/" + playerId + "/quotes/at?date=2020-01-01",
+                HttpMethod.GET, requestConToken(), String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).contains("QUOTE_NOT_FOUND");
+    }
+
+    @Test
     void deberiaRetornarRanking() {
         ResponseEntity<String> response = restTemplate.exchange(
                 baseUrl() + "/api/v1/players/ranking",

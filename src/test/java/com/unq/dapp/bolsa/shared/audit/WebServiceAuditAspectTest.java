@@ -41,6 +41,7 @@ class WebServiceAuditAspectTest {
         aspect = new WebServiceAuditAspect();
 
         Logger auditLogger = (Logger) LoggerFactory.getLogger("audit");
+        auditLogger.setLevel(ch.qos.logback.classic.Level.INFO);
         listAppender = new ListAppender<>();
         listAppender.start();
         auditLogger.addAppender(listAppender);
@@ -50,6 +51,7 @@ class WebServiceAuditAspectTest {
     void tearDown() {
         Logger auditLogger = (Logger) LoggerFactory.getLogger("audit");
         auditLogger.detachAppender(listAppender);
+        auditLogger.setLevel(null);
         SecurityContextHolder.clearContext();
     }
 

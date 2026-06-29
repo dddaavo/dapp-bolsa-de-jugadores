@@ -24,3 +24,8 @@ whoscored:
 quote:
   recalc:
     cron: "-"
+
+management:
+  health:
+    redis:
+      enabled: false

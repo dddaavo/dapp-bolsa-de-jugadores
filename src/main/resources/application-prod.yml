@@ -1,0 +1,40 @@
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/bolsadb}
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USERNAME:bolsa}
+    password: ${DB_PASSWORD:bolsa}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    defer-datasource-initialization: true
+  h2:
+    console:
+      enabled: false
+  sql:
+    init:
+      mode: always
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      ssl:
+        enabled: ${REDIS_SSL:false}
+
+management:
+  health:
+    redis:
+      enabled: true
+  endpoint:
+    health:
+      show-details: when-authorized
+
+logging:
+  level:
+    com.unq.dapp.bolsa: INFO
+
+whoscored:
+  scraping:
+    enabled: false

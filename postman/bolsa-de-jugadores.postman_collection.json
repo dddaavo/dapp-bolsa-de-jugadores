@@ -307,6 +307,37 @@
       ]
     },
     {
+      "name": "Métricas",
+      "item": [
+        {
+          "name": "GET /api/v1/metrics/market — estadísticas del mercado",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/v1/metrics/market"
+          },
+          "response": [
+            {
+              "name": "200 OK — ejemplo de respuesta",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"totalOrders\": 120,\n  \"ordersByType\": {\n    \"BUY\": 80,\n    \"SELL\": 40\n  },\n  \"totalVolumeCredits\": 487.50,\n  \"marketCapCredits\": 5250.00,\n  \"topTradedPlayers\": [\n    { \"playerId\": 3, \"playerName\": \"Erling Haaland\", \"totalOrders\": 12 },\n    { \"playerId\": 7, \"playerName\": \"Mohamed Salah\", \"totalOrders\": 9 }\n  ],\n  \"topMovers\": [\n    { \"playerId\": 7, \"playerName\": \"Mohamed Salah\", \"currentValue\": 1.92, \"previousValue\": 1.78, \"variationPct\": 7.87 },\n    { \"playerId\": 3, \"playerName\": \"Erling Haaland\", \"currentValue\": 2.10, \"previousValue\": 1.98, \"variationPct\": 6.06 }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/metrics/market — sin token → 401",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/metrics/market"
+          }
+        }
+      ]
+    },
+    {
       "name": "Mercado",
       "item": [
         {

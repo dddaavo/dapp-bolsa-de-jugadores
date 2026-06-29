@@ -3,15 +3,29 @@ package com.unq.dapp.bolsa.pricing.domain;
 import com.unq.dapp.bolsa.catalog.domain.Position;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 public class PositionWeightedStrategy implements PricingStrategy {
 
     private static final String NAME = "PositionWeighted";
-    private static final String VERSION = "v1.0";
+    private static final String DEFAULT_VERSION = "v1.0";
 
     private static final double MAX_GOALS = 30.0;
     private static final double MAX_ASSISTS = 20.0;
     private static final double MAX_RATING = 10.0;
+
+    private final Map<Position, StrategyWeights> customWeights;
+    private final String strategyVersion;
+
+    public PositionWeightedStrategy() {
+        this.customWeights = null;
+        this.strategyVersion = DEFAULT_VERSION;
+    }
+
+    public PositionWeightedStrategy(Map<Position, StrategyWeights> customWeights, String version) {
+        this.customWeights = customWeights;
+        this.strategyVersion = version;
+    }
 
     @Override
     public String name() {
@@ -20,7 +34,7 @@ public class PositionWeightedStrategy implements PricingStrategy {
 
     @Override
     public String version() {
-        return VERSION;
+        return strategyVersion;
     }
 
     @Override
@@ -37,13 +51,13 @@ public class PositionWeightedStrategy implements PricingStrategy {
         return context.initialTokenValue().multiply(1.0 + score);
     }
 
-    // Returns [goals, assists, rating] weights for a position.
-    // Null / unknown position falls back to MF balanced weights.
     private double[] weightsFor(Position position) {
-        if (position == null) {
-            return new double[]{0.2, 0.5, 0.3};
+        Position p = (position != null) ? position : Position.MF;
+        if (customWeights != null && customWeights.containsKey(p)) {
+            StrategyWeights w = customWeights.get(p);
+            return new double[]{w.goals(), w.assists(), w.rating()};
         }
-        return switch (position) {
+        return switch (p) {
             case FW -> new double[]{0.6, 0.3, 0.1};
             case MF -> new double[]{0.2, 0.5, 0.3};
             case DF -> new double[]{0.1, 0.2, 0.7};

@@ -29,18 +29,21 @@ public class QuoteRecalculationOrchestrator {
     private final PlayerTokenInventoryRepository inventoryRepository;
     private final QuoteRepository quoteRepository;
     private final StrategyRegistry strategyRegistry;
+    private final StrategyConfigService strategyConfigService;
 
     public QuoteRecalculationOrchestrator(
             PlayerRepository playerRepository,
             PlayerMetricsSnapshotRepository metricsRepository,
             PlayerTokenInventoryRepository inventoryRepository,
             QuoteRepository quoteRepository,
-            StrategyRegistry strategyRegistry) {
+            StrategyRegistry strategyRegistry,
+            StrategyConfigService strategyConfigService) {
         this.playerRepository = playerRepository;
         this.metricsRepository = metricsRepository;
         this.inventoryRepository = inventoryRepository;
         this.quoteRepository = quoteRepository;
         this.strategyRegistry = strategyRegistry;
+        this.strategyConfigService = strategyConfigService;
     }
 
     /**
@@ -120,11 +123,12 @@ public class QuoteRecalculationOrchestrator {
 
     private PricingStrategy resolveStrategy(String strategyName) {
         if (strategyName == null || strategyName.isBlank()) {
-            return strategyRegistry.getDefault();
+            return strategyConfigService.buildDefaultStrategy();
         }
-        return strategyRegistry.get(strategyName)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Strategy not found: " + strategyName));
+        if (!strategyRegistry.exists(strategyName)) {
+            throw new IllegalArgumentException("Strategy not found: " + strategyName);
+        }
+        return strategyConfigService.buildStrategy(strategyName);
     }
 }
 

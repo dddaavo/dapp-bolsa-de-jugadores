@@ -14,9 +14,11 @@ import com.unq.dapp.bolsa.pricing.domain.Money;
 import com.unq.dapp.bolsa.pricing.domain.PlayerMetricsSnapshot;
 import com.unq.dapp.bolsa.pricing.domain.PlayerTokenInventory;
 import com.unq.dapp.bolsa.pricing.domain.Quote;
+import com.unq.dapp.bolsa.pricing.domain.StrategyConfig;
 import com.unq.dapp.bolsa.pricing.infrastructure.PlayerMetricsSnapshotRepository;
 import com.unq.dapp.bolsa.pricing.infrastructure.PlayerTokenInventoryRepository;
 import com.unq.dapp.bolsa.pricing.infrastructure.QuoteRepository;
+import com.unq.dapp.bolsa.pricing.infrastructure.StrategyConfigRepository;
 import com.unq.dapp.bolsa.trading.domain.Order;
 import com.unq.dapp.bolsa.trading.domain.OrderType;
 import com.unq.dapp.bolsa.trading.domain.TokenHolding;
@@ -56,6 +58,7 @@ public class DataInitializer implements ApplicationRunner {
     private final QuoteRepository quoteRepository;
     private final TokenHoldingRepository holdingRepository;
     private final OrderRepository orderRepository;
+    private final StrategyConfigRepository strategyConfigRepository;
     private final String adminPassword;
 
     public DataInitializer(UserRepository userRepository,
@@ -68,6 +71,7 @@ public class DataInitializer implements ApplicationRunner {
                            QuoteRepository quoteRepository,
                            TokenHoldingRepository holdingRepository,
                            OrderRepository orderRepository,
+                           StrategyConfigRepository strategyConfigRepository,
                            @Value("${app.seed.admin-password}") String adminPassword) {
         this.userRepository = userRepository;
         this.playerRepository = playerRepository;
@@ -79,6 +83,7 @@ public class DataInitializer implements ApplicationRunner {
         this.quoteRepository = quoteRepository;
         this.holdingRepository = holdingRepository;
         this.orderRepository = orderRepository;
+        this.strategyConfigRepository = strategyConfigRepository;
         this.adminPassword = adminPassword;
     }
 
@@ -87,6 +92,7 @@ public class DataInitializer implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         seedUsers();
         seedPlayers();
+        seedStrategyConfigs();
         seedPlayerMetrics();
         seedInitialQuotes();
         seedQuoteHistory();
@@ -117,6 +123,28 @@ public class DataInitializer implements ApplicationRunner {
             user.setRole(Role.USER);
             userRepository.save(user);
             log.info("[DataInitializer] Usuario USER creado: {}", email);
+        }
+    }
+
+    private void seedStrategyConfigs() {
+        seedConfig("MatchMetrics",
+                "{\"goals\":0.4,\"assists\":0.3,\"rating\":0.3}");
+        seedConfig("PositionWeighted",
+                "{\"FW\":{\"goals\":0.6,\"assists\":0.3,\"rating\":0.1}," +
+                "\"MF\":{\"goals\":0.2,\"assists\":0.5,\"rating\":0.3}," +
+                "\"DF\":{\"goals\":0.1,\"assists\":0.2,\"rating\":0.7}," +
+                "\"GK\":{\"goals\":0.0,\"assists\":0.0,\"rating\":1.0}}");
+    }
+
+    private void seedConfig(String name, String weightsJson) {
+        if (strategyConfigRepository.findByName(name).isEmpty()) {
+            StrategyConfig config = new StrategyConfig();
+            config.setName(name);
+            config.setWeightsJson(weightsJson);
+            config.setActive(true);
+            config.setConfigVersion(0);
+            strategyConfigRepository.save(config);
+            log.info("[DataInitializer] StrategyConfig creado: {}", name);
         }
     }
 

@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 public class MatchMetricsStrategy implements PricingStrategy {
 
     private static final String NAME = "MatchMetrics";
-    private static final String VERSION = "v1.0";
+    private static final String DEFAULT_VERSION = "v1.0";
 
     // Valores de normalización (máximos esperados)
     private static final double MAX_GOALS = 30.0;
@@ -20,13 +20,19 @@ public class MatchMetricsStrategy implements PricingStrategy {
     private static final double MAX_RATING = 10.0;
 
     private final StrategyWeights weights;
+    private final String strategyVersion;
+
+    public MatchMetricsStrategy(StrategyWeights weights, String version) {
+        this.weights = weights;
+        this.strategyVersion = version;
+    }
 
     public MatchMetricsStrategy(StrategyWeights weights) {
-        this.weights = weights;
+        this(weights, DEFAULT_VERSION);
     }
 
     public MatchMetricsStrategy() {
-        this(StrategyWeights.defaultWeights());
+        this(StrategyWeights.defaultWeights(), DEFAULT_VERSION);
     }
 
     @Override
@@ -36,7 +42,7 @@ public class MatchMetricsStrategy implements PricingStrategy {
 
     @Override
     public String version() {
-        return VERSION;
+        return strategyVersion;
     }
 
     @Override

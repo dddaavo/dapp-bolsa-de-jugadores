@@ -457,6 +457,7 @@ Exponer `/actuator/prometheus`. Métricas custom: contador de órdenes, duració
 - [ ] Separar profiles de testing unit/e2e — issue #48
 - [ ] Unit tests del módulo trading — issue #49
 - [ ] Portfolio del usuario (`GET /users/{id}/portfolio`, enunciado §3.4 + escenario §8.3) — issue #58
+- [ ] Estrategias configurables: `StrategyConfig` persistida + pesos (enunciado §3.2 "peso configurable") — issue #62 ⚠️ hoy los pesos están hardcodeados
 - [ ] `RELEASE-NOTES.txt` + Tag `v2.0.0` (ver convención §8) — issue #50 — pendiente merge a `main`
 
 ### Entrega 3
@@ -586,7 +587,7 @@ Rutas públicas:
 - PR #36 → historial de operaciones (issue #34)
 
 **Backlog abierto (creado el 2026-06-28, con contexto completo en cada issue):**
-- **Entrega 2** (milestone `Entrega 2`): #47 (cotización a fecha dada — grave), #48 (profiles unit/e2e), #49 (unit tests trading), #58 (portfolio), #50 (cierre + `RELEASE-NOTES.txt` + tag `v2.0.0`)
+- **Entrega 2** (milestone `Entrega 2`): #47 (cotización a fecha dada — grave), #48 (profiles unit/e2e), #49 (unit tests trading), #58 (portfolio), #62 (estrategias configurables / `StrategyConfig`), #50 (cierre + `RELEASE-NOTES.txt` + tag `v2.0.0`)
 - **Entrega 3** (milestone `Entrega 3`): #51 (auditoría AOP), #52 (ArchUnit), #53 (Prometheus+Actuator), #54 (caché Redis), #55 (métricas avanzadas), #61 (sync job WhoScored), #56 (escalado horizontal, opcional), #60 (deploy, opcional), #57 (cierre E3)
 - **#59 (Football-Data) cerrado** — WhoScored cumple §7; reabrir solo si la cátedra exige una API REST.
 - Decisiones (sesión 2026-06-28): caché = Redis (#54); escalado #56 y deploy #60 = opcionales; #47 = endpoint point-in-time dedicado.

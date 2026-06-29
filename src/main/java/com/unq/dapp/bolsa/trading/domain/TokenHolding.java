@@ -1,8 +1,10 @@
 package com.unq.dapp.bolsa.trading.domain;
 
+import com.unq.dapp.bolsa.shared.error.DomainException;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Entity
 @Table(name = "token_holdings",
@@ -27,6 +29,34 @@ public class TokenHolding {
 
     @Version
     private Long version;
+
+    public static TokenHolding createNew(Long userId, Long playerId, int quantity, BigDecimal unitPrice) {
+        TokenHolding h = new TokenHolding();
+        h.userId = userId;
+        h.playerId = playerId;
+        h.quantity = quantity;
+        h.avgBuyPrice = unitPrice;
+        return h;
+    }
+
+    public void addPurchase(BigDecimal unitPrice, int qty) {
+        BigDecimal totalCost = avgBuyPrice.multiply(BigDecimal.valueOf(quantity))
+                .add(unitPrice.multiply(BigDecimal.valueOf(qty)));
+        quantity += qty;
+        avgBuyPrice = totalCost.divide(BigDecimal.valueOf(quantity), 4, RoundingMode.HALF_UP);
+    }
+
+    public void sell(int qty) {
+        if (quantity < qty) {
+            throw new DomainException("INSUFFICIENT_HOLDING",
+                    "Holding insuficiente: disponible " + quantity + ", solicitado " + qty);
+        }
+        quantity -= qty;
+    }
+
+    public boolean isSoldOut() {
+        return quantity == 0;
+    }
 
     public Long getId() { return id; }
     public Long getUserId() { return userId; }

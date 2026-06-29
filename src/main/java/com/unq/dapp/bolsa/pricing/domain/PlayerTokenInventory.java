@@ -1,14 +1,10 @@
 package com.unq.dapp.bolsa.pricing.domain;
 
+import com.unq.dapp.bolsa.shared.error.DomainException;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 
-/**
- * Inventario de tokens de un jugador.
- * Controla la emisión total y cantidad en poder del sistema (market maker).
- * Usa optimistic locking para prevenir condiciones de carrera en compra/venta.
- */
 @Entity
 @Table(name = "player_token_inventory")
 public class PlayerTokenInventory {
@@ -28,7 +24,17 @@ public class PlayerTokenInventory {
     @Version
     private Long version;
 
-    // Getters and Setters
+    public void reserve(int quantity) {
+        if (heldBySystem < quantity) {
+            throw new DomainException("INSUFFICIENT_STOCK",
+                    "Stock insuficiente: disponible " + heldBySystem + ", solicitado " + quantity);
+        }
+        heldBySystem -= quantity;
+    }
+
+    public void release(int quantity) {
+        heldBySystem += quantity;
+    }
 
     public Long getPlayerId() {
         return playerId;

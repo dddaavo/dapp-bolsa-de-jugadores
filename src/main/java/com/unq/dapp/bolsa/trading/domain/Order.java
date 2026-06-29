@@ -35,6 +35,29 @@ public class Order extends AuditableEntity {
     @Column(nullable = false, unique = true)
     private String idempotencyKey;
 
+    public static Order createBuy(Long userId, Long playerId, int quantity,
+                                   BigDecimal unitPrice, String idempotencyKey) {
+        return create(userId, playerId, OrderType.BUY, quantity, unitPrice, idempotencyKey);
+    }
+
+    public static Order createSell(Long userId, Long playerId, int quantity,
+                                    BigDecimal unitPrice, String idempotencyKey) {
+        return create(userId, playerId, OrderType.SELL, quantity, unitPrice, idempotencyKey);
+    }
+
+    private static Order create(Long userId, Long playerId, OrderType type, int quantity,
+                                 BigDecimal unitPrice, String idempotencyKey) {
+        Order o = new Order();
+        o.userId = userId;
+        o.playerId = playerId;
+        o.type = type;
+        o.quantity = quantity;
+        o.unitPrice = unitPrice;
+        o.totalAmount = unitPrice.multiply(BigDecimal.valueOf(quantity));
+        o.idempotencyKey = idempotencyKey;
+        return o;
+    }
+
     public Long getId() { return id; }
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }

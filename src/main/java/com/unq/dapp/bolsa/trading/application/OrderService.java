@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -85,38 +84,16 @@ public class OrderService {
         PlayerTokenInventory inventory = inventoryRepository.findById(request.playerId())
                 .orElseThrow(() -> new DomainException("NO_INVENTORY",
                         "El jugador no tiene inventario de tokens disponible"));
-
-        if (inventory.getHeldBySystem() < request.quantity()) {
-            throw new DomainException("INSUFFICIENT_STOCK",
-                    "Stock insuficiente: disponible " + inventory.getHeldBySystem()
-                    + ", solicitado " + request.quantity());
-        }
-
-        inventory.setHeldBySystem(inventory.getHeldBySystem() - request.quantity());
+        inventory.reserve(request.quantity());
         inventoryRepository.save(inventory);
 
         TokenHolding holding = holdingRepository
                 .findByUserIdAndPlayerId(userId, request.playerId())
-                .orElse(null);
-
-        if (holding == null) {
-            holding = new TokenHolding();
-            holding.setUserId(userId);
-            holding.setPlayerId(request.playerId());
-            holding.setQuantity(request.quantity());
-            holding.setAvgBuyPrice(unitPrice);
-        } else {
-            BigDecimal totalCost = holding.getAvgBuyPrice()
-                    .multiply(BigDecimal.valueOf(holding.getQuantity()))
-                    .add(unitPrice.multiply(BigDecimal.valueOf(request.quantity())));
-            int newQty = holding.getQuantity() + request.quantity();
-            holding.setAvgBuyPrice(totalCost.divide(BigDecimal.valueOf(newQty), 4, RoundingMode.HALF_UP));
-            holding.setQuantity(newQty);
-        }
+                .map(h -> { h.addPurchase(unitPrice, request.quantity()); return h; })
+                .orElseGet(() -> TokenHolding.createNew(userId, request.playerId(), request.quantity(), unitPrice));
         holdingRepository.save(holding);
 
-        Order order = buildOrder(userId, request.playerId(), OrderType.BUY,
-                request.quantity(), unitPrice, idempotencyKey);
+        Order order = Order.createBuy(userId, request.playerId(), request.quantity(), unitPrice, idempotencyKey);
         orderRepository.save(order);
 
         return OrderResponse.from(order);
@@ -129,29 +106,20 @@ public class OrderService {
                 .findByUserIdAndPlayerId(userId, request.playerId())
                 .orElseThrow(() -> new DomainException("NO_HOLDING",
                         "El usuario no tiene tokens de este jugador"));
-
-        if (holding.getQuantity() < request.quantity()) {
-            throw new DomainException("INSUFFICIENT_HOLDING",
-                    "Holding insuficiente: disponible " + holding.getQuantity()
-                    + ", solicitado " + request.quantity());
-        }
-
-        int remaining = holding.getQuantity() - request.quantity();
-        if (remaining == 0) {
+        holding.sell(request.quantity());
+        if (holding.isSoldOut()) {
             holdingRepository.delete(holding);
         } else {
-            holding.setQuantity(remaining);
             holdingRepository.save(holding);
         }
 
         PlayerTokenInventory inventory = inventoryRepository.findById(request.playerId())
                 .orElseThrow(() -> new DomainException("NO_INVENTORY",
                         "Inventario del jugador no encontrado"));
-        inventory.setHeldBySystem(inventory.getHeldBySystem() + request.quantity());
+        inventory.release(request.quantity());
         inventoryRepository.save(inventory);
 
-        Order order = buildOrder(userId, request.playerId(), OrderType.SELL,
-                request.quantity(), unitPrice, idempotencyKey);
+        Order order = Order.createSell(userId, request.playerId(), request.quantity(), unitPrice, idempotencyKey);
         orderRepository.save(order);
 
         return OrderResponse.from(order);
@@ -162,18 +130,5 @@ public class OrderService {
                 .map(q -> q.getValue().amount())
                 .orElseThrow(() -> new DomainException("NO_QUOTE",
                         "El jugador no tiene cotización vigente"));
-    }
-
-    private Order buildOrder(Long userId, Long playerId, OrderType type,
-                             int quantity, BigDecimal unitPrice, String idempotencyKey) {
-        Order order = new Order();
-        order.setUserId(userId);
-        order.setPlayerId(playerId);
-        order.setType(type);
-        order.setQuantity(quantity);
-        order.setUnitPrice(unitPrice);
-        order.setTotalAmount(unitPrice.multiply(BigDecimal.valueOf(quantity)));
-        order.setIdempotencyKey(idempotencyKey);
-        return order;
     }
 }

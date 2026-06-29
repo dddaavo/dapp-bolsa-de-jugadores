@@ -15,6 +15,7 @@ import com.unq.dapp.bolsa.trading.domain.TokenHolding;
 import com.unq.dapp.bolsa.trading.infrastructure.OrderRepository;
 import com.unq.dapp.bolsa.trading.infrastructure.TokenHoldingRepository;
 import com.unq.dapp.bolsa.catalog.infrastructure.PlayerRepository;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,7 +49,8 @@ class OrderServiceTest {
     @BeforeEach
     void setUp() {
         orderService = new OrderService(
-                quoteService, inventoryRepository, holdingRepository, orderRepository, playerRepository);
+                quoteService, inventoryRepository, holdingRepository, orderRepository, playerRepository,
+                new SimpleMeterRegistry());
     }
 
     // --- BUY ---

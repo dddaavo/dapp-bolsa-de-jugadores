@@ -15,6 +15,8 @@ import com.unq.dapp.bolsa.trading.domain.OrderType;
 import com.unq.dapp.bolsa.trading.domain.TokenHolding;
 import com.unq.dapp.bolsa.trading.infrastructure.OrderRepository;
 import com.unq.dapp.bolsa.trading.infrastructure.TokenHoldingRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -36,17 +38,22 @@ public class OrderService {
     private final TokenHoldingRepository holdingRepository;
     private final OrderRepository orderRepository;
     private final PlayerRepository playerRepository;
+    private final Counter buyCounter;
+    private final Counter sellCounter;
 
     public OrderService(QuoteService quoteService,
                         PlayerTokenInventoryRepository inventoryRepository,
                         TokenHoldingRepository holdingRepository,
                         OrderRepository orderRepository,
-                        PlayerRepository playerRepository) {
+                        PlayerRepository playerRepository,
+                        MeterRegistry meterRegistry) {
         this.quoteService = quoteService;
         this.inventoryRepository = inventoryRepository;
         this.holdingRepository = holdingRepository;
         this.orderRepository = orderRepository;
         this.playerRepository = playerRepository;
+        this.buyCounter = Counter.builder("orders.total").tag("type", "buy").register(meterRegistry);
+        this.sellCounter = Counter.builder("orders.total").tag("type", "sell").register(meterRegistry);
     }
 
     @Transactional(readOnly = true)
@@ -95,6 +102,7 @@ public class OrderService {
 
         Order order = Order.createBuy(userId, request.playerId(), request.quantity(), unitPrice, idempotencyKey);
         orderRepository.save(order);
+        buyCounter.increment();
 
         return OrderResponse.from(order);
     }
@@ -121,6 +129,7 @@ public class OrderService {
 
         Order order = Order.createSell(userId, request.playerId(), request.quantity(), unitPrice, idempotencyKey);
         orderRepository.save(order);
+        sellCounter.increment();
 
         return OrderResponse.from(order);
     }

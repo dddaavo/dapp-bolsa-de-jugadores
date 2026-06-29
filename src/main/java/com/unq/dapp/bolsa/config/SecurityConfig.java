@@ -29,14 +29,20 @@ public class SecurityConfig {
                                 "/auth/**",
                                 "/swagger-ui/**", "/swagger-ui.html",
                                 "/v3/api-docs/**",
-                                "/actuator/health",
+                                "/actuator/health", "/actuator/health/**",
                                 "/h2-console/**"
                         ).permitAll()
+                        .requestMatchers("/actuator/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .headers(h -> h.frameOptions(fo -> fo.sameOrigin()))
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, e) -> res.sendError(401, "Unauthorized"))
+                        .accessDeniedHandler((req, res, e) -> {
+                            res.setStatus(403);
+                            res.setContentType("application/json;charset=UTF-8");
+                            res.getWriter().write("{\"errorCode\":\"FORBIDDEN\",\"message\":\"Acceso denegado\"}");
+                        })
                 )
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

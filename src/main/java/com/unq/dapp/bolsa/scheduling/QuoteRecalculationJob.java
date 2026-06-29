@@ -3,6 +3,7 @@ package com.unq.dapp.bolsa.scheduling;
 import com.unq.dapp.bolsa.pricing.application.QuoteRecalculationOrchestrator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -18,6 +19,7 @@ public class QuoteRecalculationJob {
     }
 
     @Scheduled(cron = "${quote.recalc.cron}")
+    @SchedulerLock(name = "QuoteRecalculationJob", lockAtMostFor = "PT2H", lockAtLeastFor = "PT1M")
     public void execute() {
         log.info("[QuoteRecalculationJob] Iniciando recalculación de cotizaciones con estrategia default");
         long start = System.currentTimeMillis();

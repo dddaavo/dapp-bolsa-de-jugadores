@@ -9,6 +9,7 @@ import com.unq.dapp.bolsa.pricing.domain.PlayerMetricsSnapshot;
 import com.unq.dapp.bolsa.pricing.infrastructure.PlayerMetricsSnapshotRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +36,7 @@ public class ExternalDataSyncJob {
     }
 
     @Scheduled(cron = "${external.sync.cron:0 0 2 * * *}")
+    @SchedulerLock(name = "ExternalDataSyncJob", lockAtMostFor = "PT2H", lockAtLeastFor = "PT1M")
     @Transactional
     public void execute() {
         log.info("[ExternalDataSyncJob] Iniciando sincronización de datos externos");

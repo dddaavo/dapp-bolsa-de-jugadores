@@ -1,11 +1,16 @@
 server:
   port: ${SERVER_PORT:8080}
+  shutdown: graceful
 
 spring:
   application:
     name: bolsa-de-jugadores
   jpa:
     open-in-view: false
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: embedded
   data:
     redis:
       host: ${SPRING_DATA_REDIS_HOST:localhost}

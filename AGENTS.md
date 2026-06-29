@@ -465,13 +465,13 @@ Exponer `/actuator/prometheus`. Métricas custom: contador de órdenes, duració
 - [x] Sistema de cotización: al menos una `PricingStrategy` — issue #19 ✅ (`MatchMetricsStrategy v1.0` + `PositionWeightedStrategy v1.0`, domain + application + controllers)
 - [x] `GET /players/{id}/quotes/current`, historial, ranking — issue #40 ✅
 - [x] `POST /quotes/recalculate` (ADMIN) — issue #41 ✅
-- [x] Mercado: compra/venta de tokens (la cátedra ubica buy/sell e historial en E2) — issues #33, #34 ✅ (**faltan unit tests**, ver #49)
-- [ ] **Cotización a una fecha dada** (point-in-time, `GET /players/{id}/quotes/at?date=`) — issue #47 ⚠️ grave: el historial por rango NO lo cubre
-- [ ] Separar profiles de testing unit/e2e — issue #48
-- [ ] Unit tests del módulo trading — issue #49
-- [ ] Portfolio del usuario (`GET /users/{id}/portfolio`, enunciado §3.4 + escenario §8.3) — issue #58
-- [ ] Estrategias configurables: `StrategyConfig` persistida + pesos (enunciado §3.2 "peso configurable") — issue #62 ⚠️ hoy los pesos están hardcodeados
-- [ ] `RELEASE-NOTES.txt` + Tag `v2.0.0` (ver convención §8) — issue #50 — pendiente merge a `main`
+- [x] Mercado: compra/venta de tokens (la cátedra ubica buy/sell e historial en E2) — issues #33, #34 ✅
+- [x] **Cotización a una fecha dada** (point-in-time, `GET /players/{id}/quotes/at?date=`) — issue #47 ✅ (PR #63)
+- [x] Separar profiles de testing unit/e2e — issue #48 ✅ (PR #64)
+- [x] Unit tests del módulo trading — issue #49 ✅ (PR #65)
+- [x] Portfolio del usuario (`GET /users/{id}/portfolio`, enunciado §3.4 + escenario §8.3) — issue #58 ✅ (PR #66, #67)
+- [x] Estrategias configurables: `StrategyConfig` persistida + pesos — issue #62 ✅ (PR #67)
+- [x] `RELEASE-NOTES.txt` + Tag `v2.0.0` (ver convención §8) — issue #50 ✅ (2026-06-29)
 
 ### Entrega 3
 
@@ -576,12 +576,18 @@ Rutas públicas:
 | #34 | Historial de operaciones (GET /users/{id}/transactions) | ✅ Mergeado a `develop` (PR #36) |
 | #40 | endpoints REST de cotización (historial, actual y ranking) | ✅ Mergeado a `develop` (PR #42) |
 | #41 | POST /quotes/recalculate (ADMIN) | ✅ Mergeado a `develop` (PR #43) |
+| #47 | Cotización a fecha dada (GET /players/{id}/quotes/at) | ✅ Mergeado a `develop` (PR #63) |
+| #48 | Separación profiles unit/e2e | ✅ Mergeado a `develop` (PR #64) |
+| #49 | Unit tests módulo trading | ✅ Mergeado a `develop` (PR #65) |
+| #58 | Portfolio del usuario (GET /users/{id}/portfolio) | ✅ Mergeado a `develop` (PR #66, #67) |
+| #62 | Estrategias configurables (StrategyConfig persistida) | ✅ Mergeado a `develop` (PR #67) |
+| #50 | Cierre E2: RELEASE-NOTES.txt + tag v2.0.0 | ✅ RELEASE-NOTES.txt en feature/release-e2; tag v2.0.0 pendiente |
 
 **Entrega 1 completada:** Todos los issues de E1 están mergeados en `develop` y en `main`. Tag v1.0.0 creado el 2026-06-01. Release publicado en GitHub: https://github.com/dddaavo/dapp-bolsa-de-jugadores/releases/tag/v1.0.0
 
-**Entrega 2 — completa en `develop`, pendiente de cierre formal (merge a `main` + tag `v2.0.0`):** sistema de cotización con 2 estrategias, endpoints de quotes (current/historial/ranking), recalculate ADMIN, job semanal, DataInitializer expandido, Swagger completo y JaCoCo en CI.
+**Entrega 2 completada (2026-06-29):** Todos los issues de E2 mergeados en `develop`. PR de RELEASE-NOTES.txt en process, pendiente merge a `main` y tag `v2.0.0`. Sistema de cotización con 2 estrategias configurables, endpoints de quotes (current/historial/ranking/at), recalculate ADMIN, job semanal, mercado buy/sell, portfolio, unit tests trading, separación profiles, DataInitializer expandido, Swagger completo, JaCoCo en CI.
 
-**Entrega 3 — en curso (~40%):** trading buy/sell (#33) e historial (#34) ya están en `develop`. **Pendiente:** `GET /users/{id}/portfolio`, AOP audit, Micrometer/Prometheus, ArchUnit, integración Football-Data.org + `ExternalDataSyncJob`, y unit tests del módulo trading (hoy solo cubierto por IT). Ver checklist §13.
+**Entrega 3 — pendiente:** ver checklist §13.
 
 **PRs de Entrega 1:**
 - PR #7, #9, #10, #11, #12, #13, #14, #16, #17 → mergeados a `develop`
@@ -594,13 +600,15 @@ Rutas públicas:
 - PR #32 → PositionWeightedStrategy (issue #31)
 - PR #37, #38, #39 → JaCoCo en CI, Swagger completo, DataInitializer con escenario de trading
 - PR #44, #45 → fix de issues SonarCloud y reorganización de tests en `e2e/` vs unit
+- PR #63 → cotización a fecha dada (issue #47)
+- PR #64 → separación profiles unit/e2e (issue #48)
+- PR #65 → unit tests trading (issue #49)
+- PR #66, #67 → portfolio (issue #58) + estrategias configurables (issue #62)
+- PR #68 → refactor dominio anémico trading (en revisión)
+- PR de cierre → RELEASE-NOTES.txt + AGENTS.md (issue #50)
 
-**PRs de Entrega 3 (en curso):**
-- PR #35 → trading buy/sell (issue #33)
-- PR #36 → historial de operaciones (issue #34)
-
-**Backlog abierto (creado el 2026-06-28, con contexto completo en cada issue):**
-- **Entrega 2** (milestone `Entrega 2`): #47 (cotización a fecha dada — grave), #48 (profiles unit/e2e), #49 (unit tests trading), #58 (portfolio), #62 (estrategias configurables / `StrategyConfig`), #50 (cierre + `RELEASE-NOTES.txt` + tag `v2.0.0`)
+**Backlog abierto:**
+- **Entrega 2** (milestone `Entrega 2`): ✅ CERRADA
 - **Entrega 3** (milestone `Entrega 3`): #51 (auditoría AOP), #52 (ArchUnit), #53 (Prometheus+Actuator), #54 (caché Redis), #55 (métricas avanzadas), #61 (sync job WhoScored), #56 (escalado horizontal, opcional), #60 (deploy, opcional), #57 (cierre E3)
 - **#59 (Football-Data) cerrado** — WhoScored cumple §7; reabrir solo si la cátedra exige una API REST.
 - Decisiones (sesión 2026-06-28): caché = Redis (#54); escalado #56 y deploy #60 = opcionales; #47 = endpoint point-in-time dedicado.

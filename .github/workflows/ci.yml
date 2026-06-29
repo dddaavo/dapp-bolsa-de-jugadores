@@ -23,7 +23,7 @@ jobs:
           cache: maven
 
       - name: Build and test
-        run: ./mvnw -B verify -Dspring.profiles.active=test
+        run: ./mvnw -B verify
 
       - name: Upload coverage report
         if: always()

@@ -360,6 +360,19 @@ Convención obligatoria (fuente: documento de la cátedra en Drive):
 
 Ambos plugins ya están configurados en `pom.xml` desde el scaffold (issue #1).
 
+### Profiles de testing (issue #48 — E2)
+
+**Decisión adoptada (2026-06-28):** separación literal de Spring profiles por fase de test.
+
+| Fase | Plugin Maven | Spring profile | Config file |
+|---|---|---|---|
+| Unit / Slice (`*Test.java`) | Surefire | `test` | `application-test.yml` |
+| e2e / Integration (`*IT.java`) | Failsafe | `e2e` | `application-e2e.yml` |
+
+Cada plugin declara su perfil vía `systemPropertyVariables` en `pom.xml`. Los `*IT.java` usan `@ActiveProfiles("e2e")`. El CI corre `./mvnw -B verify` sin pasar `-Dspring.profiles.active` globalmente.
+
+**Rationale:** la consigna pide "separar profiles para unitarios y e2e". Con Surefire/Failsafe ya se separa la ejecución, pero usar el mismo profile `test` para ambas fases no cumple la separación literal. El profile `e2e` usa su propia DB (`e2edb`) y permite configurar ITs de forma independiente en el futuro.
+
 ### Pautas de la materia
 
 - JUnit 5 + Mockito + AssertJ

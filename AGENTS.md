@@ -28,7 +28,7 @@ Backend REST en Java/Spring Boot que modela un mercado de tokens de jugadores de
 | HTTP client | **Spring `RestClient`** (Spring 6.1+) | Sync, fluent, reemplazo moderno de RestTemplate |
 | Resiliencia | **Resilience4j** (circuit breaker + retry + bulkhead) | Tolerancia a fallas del proveedor externo |
 | Scraping | **Playwright Java** (Chromium headless) | WhoScored usa Cloudflare + JS rendering; Jsoup no funciona (declarado en pom.xml pero sin uso real) |
-| Caché | **Caffeine** (Spring Cache abstraction) | In-process, TTL configurable, sin infraestructura extra |
+| Caché | **Redis** (Spring Cache abstraction) | **Distribuida** — coherente bajo escalado horizontal (N instancias). Caffeine (in-process) daría una copia por nodo e inconsistencia; descartado. No implementada aún (issue #54) |
 | Scheduler | **Spring `@Scheduled`** (+ **ShedLock** si escalamos a N>1 instancias) | Cotización semanal, sync externo |
 | Mapeo | **MapStruct** | DTO ↔ Entity en compile-time, sin reflection |
 | Validación | **Jakarta Bean Validation** (`spring-boot-starter-validation`) | `@Valid` en controllers |
@@ -304,6 +304,27 @@ Prefijos: `feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `docs:`
 
 - Un issue por bloque funcional (ver checklist §11)
 - Board de seguimiento en GitHub Projects: un proyecto **Board** por entrega
+- Las entregas E2 y E3 tienen **milestone** propio en GitHub (`Entrega 2`, `Entrega 3`) y label (`entrega-2`, `entrega-3`)
+
+### Release Notes y TAG (requerimiento de la cátedra)
+
+Convención obligatoria (fuente: documento de la cátedra en Drive):
+
+- **`RELEASE-NOTES.txt` en el root del repo**, **acumulativo** (un bloque por TAG, no se sobreescriben los anteriores). **Arranca en E2** — E1 no cuenta.
+- Cada bloque declara el **estado de cada punto de entrega** y **detalla lo no implementado**, con el formato exacto:
+  ```
+  ---------------------------------------------------------------------
+  TAG XXXXXX
+  ---------------------------------------------------------------------
+  NEW FEATURES (lo que están entregando y está funcionando):
+  * ...
+  NOTES (ej: funcionalidad que falta, alguna consideración especial):
+  * ...
+  KNOWN ISSUES (ej: errores conocidos en funcionalidad terminada):
+  * ...
+  ```
+- **Naming del TAG (doble esquema):** el **git tag** usa **semver** (`v2.0.0`, `v3.0.0`); el **header del bloque** en `RELEASE-NOTES.txt` usa el formato cátedra (`ENTREGA 2 - 1.0`). Re-tag de la misma entrega = **+1 al último dígito** (`v2.0.1` / `ENTREGA 2 - 1.1`).
+- El contador del header **arranca en 1.0 por cada entrega**.
 
 ---
 
@@ -431,18 +452,33 @@ Exponer `/actuator/prometheus`. Métricas custom: contador de órdenes, duració
 - [x] Sistema de cotización: al menos una `PricingStrategy` — issue #19 ✅ (`MatchMetricsStrategy v1.0` + `PositionWeightedStrategy v1.0`, domain + application + controllers)
 - [x] `GET /players/{id}/quotes/current`, historial, ranking — issue #40 ✅
 - [x] `POST /quotes/recalculate` (ADMIN) — issue #41 ✅
-- [ ] Tag `v2.0.0` — pendiente merge a `main`
+- [x] Mercado: compra/venta de tokens (la cátedra ubica buy/sell e historial en E2) — issues #33, #34 ✅ (**faltan unit tests**, ver #49)
+- [ ] **Cotización a una fecha dada** (point-in-time, `GET /players/{id}/quotes/at?date=`) — issue #47 ⚠️ grave: el historial por rango NO lo cubre
+- [ ] Separar profiles de testing unit/e2e — issue #48
+- [ ] Unit tests del módulo trading — issue #49
+- [ ] Portfolio del usuario (`GET /users/{id}/portfolio`, enunciado §3.4 + escenario §8.3) — issue #58
+- [ ] `RELEASE-NOTES.txt` + Tag `v2.0.0` (ver convención §8) — issue #50 — pendiente merge a `main`
 
 ### Entrega 3
-- [ ] ArchUnit en CI — falta dependencia en `pom.xml` y tests
-- [ ] AOP audit logging — no implementado (solo `AuditableEntity` para timestamps)
-- [ ] Prometheus + Actuator — falta `micrometer-registry-prometheus`; endpoint no expuesto
-- [x] Mercado: buy/sell con idempotencia — issue #33 ✅ (Idempotency-Key + optimistic locking; **faltan unit tests** de `OrderService`/controllers, solo cubierto por IT)
-- [x] Historial de órdenes — issue #34 ✅ (`GET /users/{id}/transactions`)
-- [ ] Portfolio — `GET /users/{id}/portfolio` no implementado (paquete `portfolio/` inexistente)
-- [x] Segunda estrategia de cotización — issue #31 ✅ (`PositionWeightedStrategy v1.0`)
-- [ ] Integración Football-Data.org — no implementado (adapter + `ExternalDataSyncJob` pendientes)
-- [ ] Tag `v3.0.0`
+
+> La consigna oficial de E3 (Core + Funcionalidad) NO incluye `portfolio` ni `mercado buy/sell` (eso es E2 según cátedra) ni la 2da estrategia (ya hecha en #31). E3 = observabilidad + ArchUnit + optimización de ranking + métricas avanzadas, más los requisitos del enunciado de integración externa.
+
+**Core (consigna):**
+- [ ] Test de arquitectura con ArchUnit — issue #52 (obligatorio desde E3, §15)
+- [ ] Auditoría de WS (AOP + logback): timestamp/user/método/params/tiempo — issue #51
+- [ ] Prometheus + Actuator (endpoints de monitoreo y métricas) — issue #53
+- [ ] TAG + `RELEASE-NOTES.txt` (ver convención §8) — issue #57
+
+**Funcionalidad (consigna):**
+- [ ] Optimizar ranking para alta frecuencia → **caché distribuida Redis** — issue #54
+- [ ] Endpoint de métricas avanzadas (interpretación a definir) — issue #55
+
+**Requisitos del enunciado + arquitectura (E3):**
+- [ ] Integración con API externa (Football-Data.org, §7) — issue #59
+- [ ] Job de sincronización de datos externos (§4.5) — issue #61 (depende de #59)
+- [ ] Escalado horizontal N>1 (ShedLock, readiness, graceful shutdown) — issue #56 (depende de #54)
+- [ ] Deploy: perfil prod + Postgres + docker-compose + IaC/CD — issue #60 (**opcional**, no requisito de cátedra)
+- [ ] Tag `v3.0.0` (cierre)
 
 ### Distribución por entrega
 
@@ -549,7 +585,10 @@ Rutas públicas:
 - PR #35 → trading buy/sell (issue #33)
 - PR #36 → historial de operaciones (issue #34)
 
-> GitHub no tiene issues ni PRs abiertos al 2026-06-28: todo lo pendiente de E3 está sin trackear en el board.
+**Backlog abierto (creado el 2026-06-28, con contexto completo en cada issue):**
+- **Entrega 2** (milestone `Entrega 2`): #47 (cotización a fecha dada — grave), #48 (profiles unit/e2e), #49 (unit tests trading), #58 (portfolio), #50 (cierre + `RELEASE-NOTES.txt` + tag `v2.0.0`)
+- **Entrega 3** (milestone `Entrega 3`): #51 (auditoría AOP), #52 (ArchUnit), #53 (Prometheus+Actuator), #54 (caché Redis) → #56 (escalado horizontal), #55 (métricas avanzadas), #59 (Football-Data) → #61 (sync job), #60 (deploy, opcional), #57 (cierre E3)
+- Dependencias enlazadas: #54→#56, #59→#61.
 
 **Ramas activas:**
 - `develop` — integración; base de las features

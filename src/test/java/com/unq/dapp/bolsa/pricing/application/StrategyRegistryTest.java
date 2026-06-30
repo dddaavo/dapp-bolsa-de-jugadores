@@ -26,8 +26,8 @@ class StrategyRegistryTest {
         registry.register(strategy);
 
         // Then
-        assertThat(registry.get("MatchMetrics")).isPresent();
-        assertThat(registry.exists("MatchMetrics")).isTrue();
+        assertThat(registry.get("GlobalMetrics")).isPresent();
+        assertThat(registry.exists("GlobalMetrics")).isTrue();
     }
 
     @Test
@@ -66,8 +66,8 @@ class StrategyRegistryTest {
         registry.setDefaultStrategy(strategy);
 
         // Then
-        assertThat(registry.exists("MatchMetrics")).isTrue();
-        assertThat(registry.get("MatchMetrics")).isPresent();
+        assertThat(registry.exists("GlobalMetrics")).isTrue();
+        assertThat(registry.get("GlobalMetrics")).isPresent();
     }
 }
 

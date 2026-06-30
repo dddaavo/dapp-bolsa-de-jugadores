@@ -17,7 +17,7 @@ class PositionWeightedStrategyTest {
 
     @Test
     void deberiaRetornarNombreYVersion() {
-        assertThat(strategy.name()).isEqualTo("PositionWeighted");
+        assertThat(strategy.name()).isEqualTo("PositionMetrics");
         assertThat(strategy.version()).isEqualTo("v1.0");
     }
 

@@ -126,9 +126,9 @@ public class DataInitializer implements ApplicationRunner {
     }
 
     private void seedStrategyConfigs() {
-        seedConfig("MatchMetrics",
+        seedConfig("GlobalMetrics",
                 "{\"goals\":0.4,\"assists\":0.3,\"rating\":0.3}");
-        seedConfig("PositionWeighted",
+        seedConfig("PositionMetrics",
                 "{\"FW\":{\"goals\":0.6,\"assists\":0.3,\"rating\":0.1}," +
                 "\"MF\":{\"goals\":0.2,\"assists\":0.5,\"rating\":0.3}," +
                 "\"DF\":{\"goals\":0.1,\"assists\":0.2,\"rating\":0.7}," +
@@ -235,7 +235,7 @@ public class DataInitializer implements ApplicationRunner {
                 quote.setPlayerId(player.getId());
                 quote.setValue(new Money(BigDecimal.valueOf(values[i]), "CREDITS"));
                 quote.setCalculatedAt(pastDates[i]);
-                quote.setStrategyName("MatchMetrics");
+                quote.setStrategyName("GlobalMetrics");
                 quote.setStrategyVersion("v1.0");
                 quoteRepository.save(quote);
             }

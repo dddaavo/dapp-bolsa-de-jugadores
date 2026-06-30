@@ -50,8 +50,8 @@ class MarketMetricsServiceTest {
         MarketMetricsResponse result = service.getMarketMetrics();
 
         assertThat(result.totalOrders()).isEqualTo(120L);
-        assertThat(result.ordersByType().get("BUY")).isEqualTo(80L);
-        assertThat(result.ordersByType().get("SELL")).isEqualTo(40L);
+        assertThat(result.ordersByType().get("compras")).isEqualTo(80L);
+        assertThat(result.ordersByType().get("ventas")).isEqualTo(40L);
     }
 
     @Test
@@ -110,6 +110,7 @@ class MarketMetricsServiceTest {
         assertThat(result.topTradedPlayers()).hasSize(2);
         assertThat(result.topTradedPlayers().get(0).playerName()).isEqualTo("Haaland");
         assertThat(result.topTradedPlayers().get(0).totalOrders()).isEqualTo(12L);
+        // playerId ya no se expone en la respuesta
     }
 
     @Test
@@ -142,7 +143,8 @@ class MarketMetricsServiceTest {
 
         assertThat(result.topMovers()).hasSize(2);
         assertThat(result.topMovers().get(0).playerName()).isEqualTo("Salah");
-        assertThat(result.topMovers().get(0).variationPct()).isEqualByComparingTo("20.00");
+        assertThat(result.topMovers().get(0).variacionPct()).isEqualTo("+20.00");
+        assertThat(result.topMovers().get(0).tendencia()).isEqualTo("SUBE");
     }
 
     @Test
@@ -170,7 +172,7 @@ class MarketMetricsServiceTest {
         q.setPlayerId(playerId);
         q.setValue(new Money(value, "CREDITS"));
         q.setCalculatedAt(calculatedAt);
-        q.setStrategyName("MatchMetrics");
+        q.setStrategyName("GlobalMetrics");
         q.setStrategyVersion("v1.0");
         return q;
     }

@@ -126,7 +126,7 @@ class QuoteRecalculationIT {
 
     @Test
     void deberiaAceptarEstrategiaMatchMetrics() {
-        var body = Map.of("strategyName", "MatchMetrics");
+        var body = Map.of("strategyName", "GlobalMetrics");
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(adminToken);
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -137,12 +137,12 @@ class QuoteRecalculationIT {
                 HttpMethod.POST, request, String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).contains("MatchMetrics");
+        assertThat(response.getBody()).contains("GlobalMetrics");
     }
 
     @Test
     void deberiaAceptarEstrategiaPositionWeighted() {
-        var body = Map.of("strategyName", "PositionWeighted");
+        var body = Map.of("strategyName", "PositionMetrics");
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(adminToken);
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -153,7 +153,7 @@ class QuoteRecalculationIT {
                 HttpMethod.POST, request, String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).contains("PositionWeighted");
+        assertThat(response.getBody()).contains("PositionMetrics");
     }
 
     private String baseUrl() {

@@ -74,14 +74,14 @@ public class OrderService {
     @Transactional
     public OrderResponse buy(Long userId, BuyRequest request, String idempotencyKey) {
         return orderRepository.findByIdempotencyKey(idempotencyKey)
-                .map(OrderResponse::from)
+                .map(o -> OrderResponse.from(o, playerRepository.findById(o.getPlayerId()).map(p -> p.getName()).orElse("Desconocido")))
                 .orElseGet(() -> executeBuy(userId, request, idempotencyKey));
     }
 
     @Transactional
     public OrderResponse sell(Long userId, SellRequest request, String idempotencyKey) {
         return orderRepository.findByIdempotencyKey(idempotencyKey)
-                .map(OrderResponse::from)
+                .map(o -> OrderResponse.from(o, playerRepository.findById(o.getPlayerId()).map(p -> p.getName()).orElse("Desconocido")))
                 .orElseGet(() -> executeSell(userId, request, idempotencyKey));
     }
 
@@ -104,7 +104,9 @@ public class OrderService {
         orderRepository.save(order);
         buyCounter.increment();
 
-        return OrderResponse.from(order);
+        String playerName = playerRepository.findById(request.playerId())
+                .map(p -> p.getName()).orElse("Desconocido");
+        return OrderResponse.from(order, playerName);
     }
 
     private OrderResponse executeSell(Long userId, SellRequest request, String idempotencyKey) {
@@ -131,7 +133,9 @@ public class OrderService {
         orderRepository.save(order);
         sellCounter.increment();
 
-        return OrderResponse.from(order);
+        String playerName = playerRepository.findById(request.playerId())
+                .map(p -> p.getName()).orElse("Desconocido");
+        return OrderResponse.from(order, playerName);
     }
 
     private BigDecimal resolveCurrentPrice(Long playerId) {

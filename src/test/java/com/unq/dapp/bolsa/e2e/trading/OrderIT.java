@@ -69,7 +69,7 @@ class OrderIT {
         quote.setPlayerId(playerId);
         quote.setValue(new com.unq.dapp.bolsa.pricing.domain.Money(BigDecimal.valueOf(1.85), "CREDITS"));
         quote.setCalculatedAt(LocalDateTime.of(2026, 1, 1, 12, 0));
-        quote.setStrategyName("MatchMetrics");
+        quote.setStrategyName("GlobalMetrics");
         quote.setStrategyVersion("v1.0");
         quoteRepository.save(quote);
 

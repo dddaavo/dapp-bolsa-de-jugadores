@@ -169,7 +169,7 @@ class QuoteServiceTest {
         quote.setPlayerId(playerId);
         quote.setValue(value);
         quote.setCalculatedAt(LocalDateTime.of(2026, Month.JANUARY, 15, 12, 0));
-        quote.setStrategyName("MatchMetrics");
+        quote.setStrategyName("GlobalMetrics");
         quote.setStrategyVersion("v1.0");
         return quote;
     }

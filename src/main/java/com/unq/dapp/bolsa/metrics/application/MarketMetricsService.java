@@ -20,6 +20,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class MarketMetricsService {
@@ -51,7 +52,7 @@ public class MarketMetricsService {
 
         return new MarketMetricsResponse(
                 totalBuy + totalSell,
-                Map.of("BUY", totalBuy, "SELL", totalSell),
+                Map.of("compras", totalBuy, "ventas", totalSell),
                 totalVolume.setScale(2, RoundingMode.HALF_UP),
                 marketCap.setScale(2, RoundingMode.HALF_UP),
                 computeTopTraded(),
@@ -72,15 +73,22 @@ public class MarketMetricsService {
     }
 
     private List<TopTradedPlayerItem> computeTopTraded() {
-        List<Object[]> rows = orderRepository.findTopTradedPlayerIds(PageRequest.of(0, TOP_N));
+        List<Object[]> rows = orderRepository.findTopTradedPlayerIds(PageRequest.of(0, TOP_N * 3));
         return rows.stream()
                 .map(row -> {
                     Long playerId = (Long) row[0];
                     Long count    = (Long) row[1];
                     String name = playerRepository.findById(playerId)
                             .map(Player::getName).orElse("Unknown");
-                    return new TopTradedPlayerItem(playerId, name, count);
+                    return new TopTradedPlayerItem(name, count);
                 })
+                .collect(Collectors.groupingBy(
+                        TopTradedPlayerItem::playerName,
+                        Collectors.summingLong(TopTradedPlayerItem::totalOrders)))
+                .entrySet().stream()
+                .map(e -> new TopTradedPlayerItem(e.getKey(), e.getValue()))
+                .sorted(Comparator.comparingLong(TopTradedPlayerItem::totalOrders).reversed())
+                .limit(TOP_N)
                 .toList();
     }
 
@@ -89,7 +97,7 @@ public class MarketMetricsService {
                 .map(this::buildMoverItem)
                 .filter(Objects::nonNull)
                 .sorted(Comparator.comparing(
-                        item -> item.variationPct().abs(),
+                        item -> new BigDecimal(item.variacionPct().replace("+", "")).abs(),
                         Comparator.reverseOrder()))
                 .limit(TOP_N)
                 .toList();
@@ -108,9 +116,14 @@ public class MarketMetricsService {
                 .multiply(BigDecimal.valueOf(100))
                 .setScale(2, RoundingMode.HALF_UP);
 
+        String variacionStr = variationPct.compareTo(BigDecimal.ZERO) > 0
+                ? "+" + variationPct.toPlainString()
+                : variationPct.toPlainString();
+        String tendencia = variationPct.compareTo(BigDecimal.ZERO) >= 0 ? "SUBE" : "BAJA";
+
         String name = playerRepository.findById(playerId)
                 .map(Player::getName).orElse("Unknown");
 
-        return new TopMoverItem(playerId, name, current, previous, variationPct);
+        return new TopMoverItem(name, current, previous, variacionStr, tendencia);
     }
 }

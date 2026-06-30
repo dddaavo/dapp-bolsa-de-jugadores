@@ -6,6 +6,7 @@ import com.unq.dapp.bolsa.pricing.domain.*;
 import com.unq.dapp.bolsa.pricing.infrastructure.PlayerMetricsSnapshotRepository;
 import com.unq.dapp.bolsa.pricing.infrastructure.PlayerTokenInventoryRepository;
 import com.unq.dapp.bolsa.pricing.infrastructure.QuoteRepository;
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
@@ -34,6 +35,7 @@ public class QuoteRecalculationOrchestrator {
     private final StrategyRegistry strategyRegistry;
     private final StrategyConfigService strategyConfigService;
     private final QuoteService quoteService;
+    private final MeterRegistry meterRegistry;
     private final Timer recalculationTimer;
 
     private static final int DEFAULT_WARMUP_LIMIT = 10;
@@ -54,6 +56,7 @@ public class QuoteRecalculationOrchestrator {
         this.strategyRegistry = strategyRegistry;
         this.strategyConfigService = strategyConfigService;
         this.quoteService = quoteService;
+        this.meterRegistry = meterRegistry;
         this.recalculationTimer = Timer.builder("quotes.recalculation.duration")
                 .description("Duración de recalculación masiva de cotizaciones")
                 .register(meterRegistry);
@@ -70,25 +73,37 @@ public class QuoteRecalculationOrchestrator {
     public int recalculateAll(String strategyName) {
         int recalculated = recalculationTimer.record(() -> {
             PricingStrategy strategy = resolveStrategy(strategyName);
+            String resolvedName = strategy.name();
             List<Player> players = playerRepository.findAll();
 
             if (log.isInfoEnabled()) {
                 log.info("[QuoteRecalculation] Iniciando recalculación con estrategia {} v{} para {} jugadores",
-                        strategy.name(), strategy.version(), players.size());
+                        resolvedName, strategy.version(), players.size());
             }
 
             int count = 0;
+            int errors = 0;
             for (Player player : players) {
                 try {
                     recalculateForPlayer(player.getId(), strategy);
                     count++;
                 } catch (Exception e) {
+                    errors++;
                     log.error("[QuoteRecalculation] Error recalculando jugador {}: {}",
                              player.getId(), e.getMessage());
                 }
             }
 
-            log.info("[QuoteRecalculation] Completado: {} jugadores recalculados", count);
+            String status = errors == 0 ? "complete" : (count == 0 ? "failed" : "partial");
+            Counter.builder("quotes.recalculation.total")
+                    .description("Cantidad de veces que se ejecutó recalculateAll")
+                    .tag("strategy", resolvedName)
+                    .tag("status", status)
+                    .register(meterRegistry)
+                    .increment();
+
+            log.info("[QuoteRecalculation] Completado: {} jugadores recalculados, {} errores, status={}",
+                    count, errors, status);
             return count;
         });
 
@@ -137,7 +152,6 @@ public class QuoteRecalculationOrchestrator {
         );
         Money value = strategy.calculate(metrics, context);
 
-        // Crear y persistir quote
         Quote quote = new Quote();
         quote.setPlayerId(playerId);
         quote.setValue(value);
@@ -158,4 +172,3 @@ public class QuoteRecalculationOrchestrator {
         return strategyConfigService.buildStrategy(strategyName);
     }
 }
-

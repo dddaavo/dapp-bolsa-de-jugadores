@@ -31,9 +31,10 @@ public class PlayerController {
             @Parameter(description = "Filtrar por liga") @RequestParam(required = false) League league,
             @Parameter(description = "Filtrar por equipo (coincidencia parcial)") @RequestParam(required = false) String team,
             @Parameter(description = "Filtrar por posición") @RequestParam(required = false) Position position,
+            @Parameter(description = "Filtrar por nombre (coincidencia parcial)") @RequestParam(required = false) String name,
             Pageable pageable
     ) {
-        return ResponseEntity.ok(playerService.list(league, team, position, pageable).map(PlayerResponse::from));
+        return ResponseEntity.ok(playerService.list(league, team, position, name, pageable).map(PlayerResponse::from));
     }
 
     @Operation(summary = "Obtener jugador por ID")

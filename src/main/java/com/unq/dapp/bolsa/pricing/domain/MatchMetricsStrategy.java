@@ -11,7 +11,7 @@ import java.math.BigDecimal;
  */
 public class MatchMetricsStrategy implements PricingStrategy {
 
-    private static final String NAME = "MatchMetrics";
+    private static final String NAME = "GlobalMetrics";
     private static final String DEFAULT_VERSION = "v1.0";
 
     // Valores de normalización (máximos esperados)

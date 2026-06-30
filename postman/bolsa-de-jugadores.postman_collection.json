@@ -277,6 +277,25 @@
           }
         },
         {
+          "name": "GET /api/v1/players — filtro por nombre",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/players?name=haaland&page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "players"],
+              "query": [
+                { "key": "name", "value": "haaland" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
           "name": "GET /api/v1/players/{id} — jugador 1",
           "request": {
             "method": "GET",
@@ -381,18 +400,18 @@
           }
         },
         {
-          "name": "GET /api/v1/players/ranking — estrategia PositionWeighted",
+          "name": "GET /api/v1/players/ranking — estrategia PositionMetrics",
           "request": {
             "method": "GET",
             "header": [
               { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/players/ranking?strategy=PositionWeighted&limit=10",
+              "raw": "{{baseUrl}}/api/v1/players/ranking?strategy=PositionMetrics&limit=10",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "players", "ranking"],
               "query": [
-                { "key": "strategy", "value": "PositionWeighted" },
+                { "key": "strategy", "value": "PositionMetrics" },
                 { "key": "limit", "value": "10" }
               ]
             }
@@ -420,7 +439,7 @@
             "url": "{{baseUrl}}/api/v1/quotes/recalculate",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"strategyName\": \"MatchMetrics\"\n}"
+              "raw": "{\n  \"strategyName\": \"GlobalMetrics\"\n}"
             }
           }
         },
@@ -461,14 +480,14 @@
           }
         },
         {
-          "name": "PUT /api/v1/strategies/MatchMetrics/config (ADMIN)",
+          "name": "PUT /api/v1/strategies/GlobalMetrics/config (ADMIN)",
           "request": {
             "method": "PUT",
             "header": [
               { "key": "Authorization", "value": "Bearer {{adminToken}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
-            "url": "{{baseUrl}}/api/v1/strategies/MatchMetrics/config",
+            "url": "{{baseUrl}}/api/v1/strategies/GlobalMetrics/config",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"weightsJson\": \"{\\\"goals\\\":0.4,\\\"assists\\\":0.3,\\\"rating\\\":0.3}\"\n}"
@@ -476,14 +495,14 @@
           }
         },
         {
-          "name": "PUT /api/v1/strategies/PositionWeighted/config (ADMIN)",
+          "name": "PUT /api/v1/strategies/PositionMetrics/config (ADMIN)",
           "request": {
             "method": "PUT",
             "header": [
               { "key": "Authorization", "value": "Bearer {{adminToken}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
-            "url": "{{baseUrl}}/api/v1/strategies/PositionWeighted/config",
+            "url": "{{baseUrl}}/api/v1/strategies/PositionMetrics/config",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"weightsJson\": \"{\\\"FW\\\":{\\\"goals\\\":0.6,\\\"assists\\\":0.3,\\\"rating\\\":0.1},\\\"MF\\\":{\\\"goals\\\":0.3,\\\"assists\\\":0.4,\\\"rating\\\":0.3},\\\"DF\\\":{\\\"goals\\\":0.1,\\\"assists\\\":0.2,\\\"rating\\\":0.7},\\\"GK\\\":{\\\"goals\\\":0.0,\\\"assists\\\":0.1,\\\"rating\\\":0.9}}\"\n}"
@@ -498,7 +517,7 @@
               { "key": "Authorization", "value": "Bearer {{token}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
-            "url": "{{baseUrl}}/api/v1/strategies/MatchMetrics/config",
+            "url": "{{baseUrl}}/api/v1/strategies/GlobalMetrics/config",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"weightsJson\": \"{\\\"goals\\\":0.4,\\\"assists\\\":0.3,\\\"rating\\\":0.3}\"\n}"
@@ -525,7 +544,7 @@
               "status": "OK",
               "code": 200,
               "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"totalOrders\": 120,\n  \"ordersByType\": {\n    \"BUY\": 80,\n    \"SELL\": 40\n  },\n  \"totalVolumeCredits\": 487.50,\n  \"marketCapCredits\": 5250.00,\n  \"topTradedPlayers\": [\n    { \"playerId\": 3, \"playerName\": \"Erling Haaland\", \"totalOrders\": 12 },\n    { \"playerId\": 7, \"playerName\": \"Mohamed Salah\", \"totalOrders\": 9 }\n  ],\n  \"topMovers\": [\n    { \"playerId\": 7, \"playerName\": \"Mohamed Salah\", \"currentValue\": 1.92, \"previousValue\": 1.78, \"variationPct\": 7.87 },\n    { \"playerId\": 3, \"playerName\": \"Erling Haaland\", \"currentValue\": 2.10, \"previousValue\": 1.98, \"variationPct\": 6.06 }\n  ]\n}"
+              "body": "{\n  \"totalOrders\": 22,\n  \"ordersByType\": {\n    \"compras\": 21,\n    \"ventas\": 1\n  },\n  \"totalVolumeCredits\": 221.25,\n  \"marketCapCredits\": 4050.00,\n  \"topTradedPlayers\": [\n    { \"playerName\": \"Bukayo Saka\", \"totalOrders\": 3 },\n    { \"playerName\": \"Erling Haaland\", \"totalOrders\": 2 }\n  ],\n  \"topMovers\": [\n    { \"playerName\": \"Erling Haaland\", \"cotizacionActual\": 1.39, \"cotizacionAnterior\": 1.72, \"variacionPct\": \"-19.19\", \"tendencia\": \"BAJA\" },\n    { \"playerName\": \"Mohamed Salah\", \"cotizacionActual\": 1.55, \"cotizacionAnterior\": 1.39, \"variacionPct\": \"+11.51\", \"tendencia\": \"SUBE\" }\n  ]\n}"
             }
           ]
         },

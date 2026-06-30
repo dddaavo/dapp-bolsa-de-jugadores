@@ -20,8 +20,8 @@ public class PlayerService {
         this.playerRepository = playerRepository;
     }
 
-    public Page<Player> list(League league, String team, Position position, Pageable pageable) {
-        return playerRepository.findWithFilters(league, team, position, pageable);
+    public Page<Player> list(League league, String team, Position position, String name, Pageable pageable) {
+        return playerRepository.findWithFilters(league, team, position, name, pageable);
     }
 
     public Player findById(Long id) {

@@ -10,16 +10,18 @@ import java.time.Instant;
 public record OrderResponse(
         @Schema(description = "ID de la orden") Long orderId,
         @Schema(description = "ID del jugador") Long playerId,
+        @Schema(description = "Nombre del jugador") String playerName,
         @Schema(description = "Tipo de operación") OrderType type,
         @Schema(description = "Cantidad de tokens") Integer quantity,
         @Schema(description = "Precio unitario al momento de la operación") BigDecimal unitPrice,
         @Schema(description = "Monto total") BigDecimal totalAmount,
         @Schema(description = "Fecha y hora de ejecución (ISO-8601)") Instant executedAt
 ) {
-    public static OrderResponse from(Order order) {
+    public static OrderResponse from(Order order, String playerName) {
         return new OrderResponse(
                 order.getId(),
                 order.getPlayerId(),
+                playerName,
                 order.getType(),
                 order.getQuantity(),
                 order.getUnitPrice(),

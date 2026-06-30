@@ -67,7 +67,7 @@ public class StrategyConfigService {
     private PricingStrategy buildFromJson(String name, String weightsJson, String version) {
         try {
             return switch (name) {
-                case "MatchMetrics" -> {
+                case "GlobalMetrics" -> {
                     Map<String, Double> raw = objectMapper.readValue(weightsJson,
                             new TypeReference<Map<String, Double>>() {});
                     StrategyWeights weights = new StrategyWeights(
@@ -76,7 +76,7 @@ public class StrategyConfigService {
                             raw.getOrDefault("rating", 0.3));
                     yield new MatchMetricsStrategy(weights, version);
                 }
-                case "PositionWeighted" -> {
+                case "PositionMetrics" -> {
                     Map<String, Map<String, Double>> raw = objectMapper.readValue(weightsJson,
                             new TypeReference<Map<String, Map<String, Double>>>() {});
                     Map<Position, StrategyWeights> weightsByPosition = raw.entrySet().stream()

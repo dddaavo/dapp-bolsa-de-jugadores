@@ -37,10 +37,10 @@ class PlayerServiceTest {
     void deberiaRetornarJugadoresPaginados() {
         Pageable pageable = PageRequest.of(0, 10);
         Player player = buildPlayer(1L, "Erling Haaland", Position.FW, "Manchester City", League.PREMIER_LEAGUE);
-        when(playerRepository.findWithFilters(any(), any(), any(), eq(pageable)))
+        when(playerRepository.findWithFilters(any(), any(), any(), any(), eq(pageable)))
                 .thenReturn(new PageImpl<>(List.of(player)));
 
-        Page<Player> result = playerService.list(null, null, null, pageable);
+        Page<Player> result = playerService.list(null, null, null, null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getName()).isEqualTo("Erling Haaland");
@@ -50,10 +50,10 @@ class PlayerServiceTest {
     void deberiaDelegarFiltroLigaAlRepositorio() {
         Pageable pageable = PageRequest.of(0, 10);
         Player player = buildPlayer(2L, "Vinícius Júnior", Position.FW, "Real Madrid", League.LA_LIGA);
-        when(playerRepository.findWithFilters(eq(League.LA_LIGA), any(), any(), eq(pageable)))
+        when(playerRepository.findWithFilters(eq(League.LA_LIGA), any(), any(), any(), eq(pageable)))
                 .thenReturn(new PageImpl<>(List.of(player)));
 
-        Page<Player> result = playerService.list(League.LA_LIGA, null, null, pageable);
+        Page<Player> result = playerService.list(League.LA_LIGA, null, null, null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getLeague()).isEqualTo(League.LA_LIGA);

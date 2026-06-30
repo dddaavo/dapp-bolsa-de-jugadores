@@ -90,7 +90,7 @@ class MatchMetricsStrategyTest {
         MatchMetricsStrategy strategy = new MatchMetricsStrategy();
 
         // Then
-        assertThat(strategy.name()).isEqualTo("MatchMetrics");
+        assertThat(strategy.name()).isEqualTo("GlobalMetrics");
         assertThat(strategy.version()).isEqualTo("v1.0");
     }
 

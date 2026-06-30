@@ -40,6 +40,8 @@ class QuoteRecalculationOrchestratorTest {
     private StrategyRegistry strategyRegistry;
     @Mock
     private StrategyConfigService strategyConfigService;
+    @Mock
+    private QuoteService quoteService;
 
     private QuoteRecalculationOrchestrator orchestrator;
 
@@ -48,7 +50,7 @@ class QuoteRecalculationOrchestratorTest {
         orchestrator = new QuoteRecalculationOrchestrator(
                 playerRepository, metricsRepository, inventoryRepository,
                 quoteRepository, strategyRegistry, strategyConfigService,
-                new SimpleMeterRegistry()
+                quoteService, new SimpleMeterRegistry()
         );
     }
 

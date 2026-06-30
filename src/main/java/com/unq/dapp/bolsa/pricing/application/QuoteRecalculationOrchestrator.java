@@ -33,7 +33,10 @@ public class QuoteRecalculationOrchestrator {
     private final QuoteRepository quoteRepository;
     private final StrategyRegistry strategyRegistry;
     private final StrategyConfigService strategyConfigService;
+    private final QuoteService quoteService;
     private final Timer recalculationTimer;
+
+    private static final int DEFAULT_WARMUP_LIMIT = 10;
 
     public QuoteRecalculationOrchestrator(
             PlayerRepository playerRepository,
@@ -42,6 +45,7 @@ public class QuoteRecalculationOrchestrator {
             QuoteRepository quoteRepository,
             StrategyRegistry strategyRegistry,
             StrategyConfigService strategyConfigService,
+            QuoteService quoteService,
             MeterRegistry meterRegistry) {
         this.playerRepository = playerRepository;
         this.metricsRepository = metricsRepository;
@@ -49,6 +53,7 @@ public class QuoteRecalculationOrchestrator {
         this.quoteRepository = quoteRepository;
         this.strategyRegistry = strategyRegistry;
         this.strategyConfigService = strategyConfigService;
+        this.quoteService = quoteService;
         this.recalculationTimer = Timer.builder("quotes.recalculation.duration")
                 .description("Duración de recalculación masiva de cotizaciones")
                 .register(meterRegistry);
@@ -60,10 +65,10 @@ public class QuoteRecalculationOrchestrator {
      * @param strategyName  Nombre de la estrategia a usar (null = default)
      * @return Cantidad de jugadores recalculados
      */
-    @CacheEvict(cacheNames = "ranking", allEntries = true)
+    @CacheEvict(cacheNames = "ranking", allEntries = true, beforeInvocation = true)
     @Transactional
     public int recalculateAll(String strategyName) {
-        return recalculationTimer.record(() -> {
+        int recalculated = recalculationTimer.record(() -> {
             PricingStrategy strategy = resolveStrategy(strategyName);
             List<Player> players = playerRepository.findAll();
 
@@ -72,20 +77,31 @@ public class QuoteRecalculationOrchestrator {
                         strategy.name(), strategy.version(), players.size());
             }
 
-            int recalculated = 0;
+            int count = 0;
             for (Player player : players) {
                 try {
                     recalculateForPlayer(player.getId(), strategy);
-                    recalculated++;
+                    count++;
                 } catch (Exception e) {
                     log.error("[QuoteRecalculation] Error recalculando jugador {}: {}",
                              player.getId(), e.getMessage());
                 }
             }
 
-            log.info("[QuoteRecalculation] Completado: {} jugadores recalculados", recalculated);
-            return recalculated;
+            log.info("[QuoteRecalculation] Completado: {} jugadores recalculados", count);
+            return count;
         });
+
+        // Pre-calentar el cache con los datos recién calculados para que el primer GET sea rápido
+        try {
+            quoteService.getRankingQuotes(DEFAULT_WARMUP_LIMIT, strategyName);
+            log.debug("[QuoteRecalculation] Cache de ranking pre-calentado con estrategia {}",
+                    strategyName != null ? strategyName : "default");
+        } catch (Exception e) {
+            log.warn("[QuoteRecalculation] No se pudo pre-calentar el cache de ranking: {}", e.getMessage());
+        }
+
+        return recalculated;
     }
 
     /**

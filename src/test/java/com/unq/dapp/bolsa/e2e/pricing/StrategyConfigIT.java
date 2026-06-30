@@ -59,7 +59,7 @@ class StrategyConfigIT {
 
         HttpEntity<Map<String, String>> request = new HttpEntity<>(body, headersConToken(adminToken));
         ResponseEntity<String> response = restTemplate.exchange(
-                baseUrl() + "/api/v1/strategies/MatchMetrics/config",
+                baseUrl() + "/api/v1/strategies/GlobalMetrics/config",
                 HttpMethod.PUT, request, String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -73,7 +73,7 @@ class StrategyConfigIT {
         HttpEntity<Map<String, String>> request = new HttpEntity<>(body, headersConToken(userToken));
 
         ResponseEntity<String> response = restTemplate.exchange(
-                baseUrl() + "/api/v1/strategies/MatchMetrics/config",
+                baseUrl() + "/api/v1/strategies/GlobalMetrics/config",
                 HttpMethod.PUT, request, String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);

@@ -50,16 +50,17 @@ class ActuatorIT {
     }
 
     @Test
-    void prometheusDeberiaExponer403AUsuarioComun() {
+    void prometheusDeberiaSerPublicoParaCualquierUsuario() {
         ResponseEntity<String> response = restTemplate.exchange(
             url("/actuator/prometheus"), HttpMethod.GET, headersConToken(userToken), String.class);
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
-    void prometheusDeberiaExponer401SinToken() {
+    void prometheusDeberiaSerPublicoSinToken() {
         ResponseEntity<String> response = restTemplate.getForEntity(url("/actuator/prometheus"), String.class);
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).contains("# HELP", "# TYPE");
     }
 
     @Test

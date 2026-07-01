@@ -2,6 +2,7 @@ package com.unq.dapp.bolsa.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +33,9 @@ public class CacheConfig implements CachingConfigurer {
         om.registerModule(new JavaTimeModule());
         om.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         om.activateDefaultTyping(
-                om.getPolymorphicTypeValidator(),
+                BasicPolymorphicTypeValidator.builder()
+                        .allowIfSubType("com.unq.dapp.bolsa")
+                        .build(),
                 ObjectMapper.DefaultTyping.NON_FINAL
         );
 

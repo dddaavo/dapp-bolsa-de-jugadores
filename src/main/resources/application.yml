@@ -44,6 +44,7 @@ management:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+    custom-css-url: /swagger-custom.css
   api-docs:
     path: /v3/api-docs
 

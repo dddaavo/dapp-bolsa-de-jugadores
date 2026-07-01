@@ -50,12 +50,9 @@
           }
         },
         {
-          "name": "GET /actuator/prometheus (ADMIN)",
+          "name": "GET /actuator/prometheus (público)",
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
-            ],
             "url": "{{baseUrl}}/actuator/prometheus"
           }
         }

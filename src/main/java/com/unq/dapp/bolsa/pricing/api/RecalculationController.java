@@ -26,8 +26,6 @@ public class RecalculationController {
     }
 
     @Operation(summary = "Recalcular cotizaciones de todos los jugadores (solo ADMIN)")
-    @ApiResponse(responseCode = "200", description = "Recalculación completada")
-    @ApiResponse(responseCode = "401", description = "No autenticado")
     @ApiResponse(responseCode = "403", description = "Sin permisos (requiere ADMIN)")
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/recalculate")

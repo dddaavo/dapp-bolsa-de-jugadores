@@ -20,8 +20,6 @@ public class PortfolioController {
     }
 
     @Operation(summary = "Portfolio del usuario: posiciones, valorización y ganancia/pérdida")
-    @ApiResponse(responseCode = "200", description = "Portfolio obtenido")
-    @ApiResponse(responseCode = "401", description = "No autenticado")
     @ApiResponse(responseCode = "403", description = "Sin permisos para ver este usuario")
     @GetMapping("/{id}/portfolio")
     @PreAuthorize("#id == authentication.principal.id or hasRole('ADMIN')")

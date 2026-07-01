@@ -30,9 +30,7 @@ public class QuoteController {
     }
 
     @Operation(summary = "Cotización actual de un jugador")
-    @ApiResponse(responseCode = "200", description = "Cotización encontrada")
     @ApiResponse(responseCode = "404", description = "Sin cotización para el jugador")
-    @ApiResponse(responseCode = "401", description = "No autenticado")
     @GetMapping("/{id}/quotes/current")
     public ResponseEntity<QuoteResponse> getCurrent(@PathVariable Long id) {
         return ResponseEntity.ok(
@@ -43,10 +41,8 @@ public class QuoteController {
     }
 
     @Operation(summary = "Cotización vigente de un jugador a una fecha dada")
-    @ApiResponse(responseCode = "200", description = "Cotización encontrada")
     @ApiResponse(responseCode = "400", description = "Fecha inválida o ausente")
     @ApiResponse(responseCode = "404", description = "Sin cotización para el jugador a esa fecha")
-    @ApiResponse(responseCode = "401", description = "No autenticado")
     @GetMapping("/{id}/quotes/at")
     public ResponseEntity<QuoteResponse> getAt(
             @PathVariable Long id,
@@ -61,8 +57,6 @@ public class QuoteController {
     }
 
     @Operation(summary = "Historial de cotizaciones de un jugador")
-    @ApiResponse(responseCode = "200", description = "Historial de cotizaciones")
-    @ApiResponse(responseCode = "401", description = "No autenticado")
     @GetMapping("/{id}/quotes")
     public ResponseEntity<List<QuoteResponse>> getHistory(
             @PathVariable Long id,
@@ -78,8 +72,6 @@ public class QuoteController {
     }
 
     @Operation(summary = "Ranking de jugadores por cotización actual")
-    @ApiResponse(responseCode = "200", description = "Ranking")
-    @ApiResponse(responseCode = "401", description = "No autenticado")
     @GetMapping("/ranking")
     public ResponseEntity<List<PlayerRankingResponse>> getRanking(
             @Parameter(description = "Estrategia de cotización (opcional, default: más reciente)")

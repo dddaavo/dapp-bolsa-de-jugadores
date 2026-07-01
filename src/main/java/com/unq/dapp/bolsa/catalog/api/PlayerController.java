@@ -24,8 +24,6 @@ public class PlayerController {
     }
 
     @Operation(summary = "Listar jugadores con filtros opcionales y paginación")
-    @ApiResponse(responseCode = "200", description = "Listado paginado")
-    @ApiResponse(responseCode = "401", description = "No autenticado")
     @GetMapping
     public ResponseEntity<Page<PlayerResponse>> list(
             @Parameter(description = "Filtrar por liga") @RequestParam(required = false) League league,
@@ -38,9 +36,7 @@ public class PlayerController {
     }
 
     @Operation(summary = "Obtener jugador por ID")
-    @ApiResponse(responseCode = "200", description = "Jugador encontrado")
     @ApiResponse(responseCode = "404", description = "Jugador no encontrado")
-    @ApiResponse(responseCode = "401", description = "No autenticado")
     @GetMapping("/{id}")
     public ResponseEntity<PlayerResponse> findById(@PathVariable Long id) {
         return ResponseEntity.ok(PlayerResponse.from(playerService.findById(id)));

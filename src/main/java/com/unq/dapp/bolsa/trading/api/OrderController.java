@@ -24,9 +24,7 @@ public class OrderController {
     }
 
     @Operation(summary = "Comprar tokens de un jugador")
-    @ApiResponse(responseCode = "201", description = "Compra ejecutada")
     @ApiResponse(responseCode = "400", description = "Request inválido o falta Idempotency-Key")
-    @ApiResponse(responseCode = "401", description = "No autenticado")
     @ApiResponse(responseCode = "422", description = "Sin stock o sin cotización vigente")
     @PostMapping("/buy")
     public ResponseEntity<OrderResponse> buy(
@@ -40,9 +38,7 @@ public class OrderController {
     }
 
     @Operation(summary = "Vender tokens de un jugador")
-    @ApiResponse(responseCode = "201", description = "Venta ejecutada")
     @ApiResponse(responseCode = "400", description = "Request inválido o falta Idempotency-Key")
-    @ApiResponse(responseCode = "401", description = "No autenticado")
     @ApiResponse(responseCode = "422", description = "Sin holding suficiente o sin cotización vigente")
     @PostMapping("/sell")
     public ResponseEntity<OrderResponse> sell(

@@ -23,8 +23,7 @@ public class AuthController {
         this.authService = authService;
     }
 
-    @Operation(summary = "Registrar nuevo usuario", description = "Crea un usuario con rol USER y devuelve un JWT")
-    @ApiResponse(responseCode = "201", description = "Usuario creado")
+  @Operation(summary = "Registrar nuevo usuario")
     @ApiResponse(responseCode = "400", description = "Datos inválidos")
     @ApiResponse(responseCode = "409", description = "Email ya registrado")
     @PostMapping("/register")
@@ -32,8 +31,7 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(req));
     }
 
-    @Operation(summary = "Iniciar sesión", description = "Devuelve un JWT para el usuario autenticado")
-    @ApiResponse(responseCode = "200", description = "Login exitoso")
+    @Operation(summary = "Iniciar sesión")
     @ApiResponse(responseCode = "400", description = "Datos inválidos")
     @ApiResponse(responseCode = "401", description = "Credenciales incorrectas")
     @PostMapping("/login")

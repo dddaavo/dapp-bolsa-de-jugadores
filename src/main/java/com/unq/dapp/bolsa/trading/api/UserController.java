@@ -28,8 +28,6 @@ public class UserController {
     }
 
     @Operation(summary = "Historial de órdenes del usuario")
-    @ApiResponse(responseCode = "200", description = "Historial de órdenes")
-    @ApiResponse(responseCode = "401", description = "No autenticado")
     @ApiResponse(responseCode = "403", description = "Sin permisos para ver este usuario")
     @GetMapping("/{id}/transactions")
     @PreAuthorize("#id == authentication.principal.id or hasRole('ADMIN')")

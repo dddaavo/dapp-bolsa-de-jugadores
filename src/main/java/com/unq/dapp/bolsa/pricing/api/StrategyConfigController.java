@@ -24,8 +24,6 @@ public class StrategyConfigController {
 
     @GetMapping
     @Operation(summary = "Lista las configuraciones activas de estrategias")
-    @ApiResponse(responseCode = "200", description = "Lista de estrategias activas")
-    @ApiResponse(responseCode = "401", description = "No autenticado")
     public ResponseEntity<List<StrategyConfigResponse>> getAll() {
         return ResponseEntity.ok(strategyConfigService.getAll());
     }
@@ -33,9 +31,7 @@ public class StrategyConfigController {
     @PutMapping("/{name}/config")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Actualiza los pesos de una estrategia (ADMIN)")
-    @ApiResponse(responseCode = "200", description = "Pesos actualizados correctamente")
     @ApiResponse(responseCode = "400", description = "weightsJson inválido")
-    @ApiResponse(responseCode = "401", description = "No autenticado")
     @ApiResponse(responseCode = "403", description = "Sin permisos (requiere ADMIN)")
     public ResponseEntity<StrategyConfigResponse> updateWeights(
             @PathVariable String name,

@@ -6,6 +6,8 @@ import com.unq.dapp.bolsa.catalog.domain.Position;
 import com.unq.dapp.bolsa.pricing.api.StrategyConfigResponse;
 import com.unq.dapp.bolsa.pricing.api.UpdateStrategyWeightsRequest;
 import com.unq.dapp.bolsa.pricing.domain.*;
+import com.unq.dapp.bolsa.shared.error.DomainException;
+import org.springframework.http.HttpStatus;
 import com.unq.dapp.bolsa.pricing.infrastructure.StrategyConfigRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,12 +41,13 @@ public class StrategyConfigService {
     @Transactional
     public StrategyConfigResponse updateWeights(String name, UpdateStrategyWeightsRequest request) {
         StrategyConfig config = configRepository.findByName(name)
-                .orElseThrow(() -> new IllegalArgumentException("Strategy config not found: " + name));
+                .orElseThrow(() -> new DomainException("STRATEGY_NOT_FOUND",
+                        "Estrategia no encontrada: " + name, HttpStatus.NOT_FOUND));
         String weightsJson;
         try {
             weightsJson = objectMapper.writeValueAsString(request.weights());
         } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid weights: " + e.getMessage(), e);
+            throw new DomainException("INVALID_WEIGHTS", "Pesos inválidos: " + e.getMessage(), HttpStatus.BAD_REQUEST);
         }
         validateWeightsJson(name, weightsJson);
         config.setWeightsJson(weightsJson);
@@ -97,9 +100,10 @@ public class StrategyConfigService {
                 default -> strategyRegistry.get(name).orElseGet(strategyRegistry::getDefault);
             };
         } catch (IllegalArgumentException e) {
-            throw e;
+            throw new DomainException("INVALID_WEIGHTS", e.getMessage(), HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid weightsJson for strategy " + name + ": " + e.getMessage(), e);
+            throw new DomainException("INVALID_WEIGHTS",
+                    "Pesos inválidos para la estrategia " + name + ": " + e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
 }

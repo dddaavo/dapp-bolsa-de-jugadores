@@ -7,6 +7,7 @@ import com.unq.dapp.bolsa.auth.domain.Role;
 import com.unq.dapp.bolsa.auth.domain.User;
 import com.unq.dapp.bolsa.auth.infrastructure.UserRepository;
 import com.unq.dapp.bolsa.shared.error.DomainException;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,7 +35,7 @@ public class AuthService {
 
     public AuthResponse register(RegisterRequest req) {
         if (userRepository.existsByEmail(req.email())) {
-            throw new DomainException("EMAIL_TAKEN", "El email ya está registrado: " + req.email());
+            throw new DomainException("EMAIL_TAKEN", "El email ya está registrado: " + req.email(), HttpStatus.CONFLICT);
         }
         User user = new User();
         user.setEmail(req.email());
@@ -48,7 +49,9 @@ public class AuthService {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(req.email(), req.password())
         );
-        User user = userRepository.findByEmail(req.email()).orElseThrow();
+        User user = userRepository.findByEmail(req.email())
+                .orElseThrow(() -> new DomainException("USER_NOT_FOUND",
+                        "Usuario no encontrado", HttpStatus.UNAUTHORIZED));
         return buildResponse(user);
     }
 

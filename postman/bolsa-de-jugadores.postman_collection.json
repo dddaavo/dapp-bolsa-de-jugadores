@@ -166,7 +166,7 @@
           }
         },
         {
-          "name": "POST /auth/register (email duplicado → 422)",
+          "name": "POST /auth/register (email duplicado → 409)",
           "request": {
             "method": "POST",
             "header": [

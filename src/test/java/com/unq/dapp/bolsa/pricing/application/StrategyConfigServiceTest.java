@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.unq.dapp.bolsa.shared.error.DomainException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -91,7 +92,7 @@ class StrategyConfigServiceTest {
                 Map.of("goals", 0.9, "assists", 0.9, "rating", 0.9));
 
         assertThatThrownBy(() -> service.updateWeights("GlobalMetrics", request))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(DomainException.class);
     }
 
     @Test

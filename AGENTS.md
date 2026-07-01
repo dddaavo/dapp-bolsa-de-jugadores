@@ -32,7 +32,7 @@ Backend REST en Java/Spring Boot que modela un mercado de tokens de jugadores de
 | Scheduler | **Spring `@Scheduled`** (+ **ShedLock** si escalamos a N>1 instancias) | Cotización semanal, sync externo |
 | Mapeo | **MapStruct** | DTO ↔ Entity en compile-time, sin reflection |
 | Validación | **Jakarta Bean Validation** (`spring-boot-starter-validation`) | `@Valid` en controllers |
-| Observabilidad | **Actuator + Micrometer + Prometheus + Logback (JSON) + AOP audit** | Health, métricas Prometheus, logs estructurados, auditoría de WS (Entrega 3) |
+| Observabilidad | **Actuator + Micrometer + Prometheus + Loki + Grafana + loki-logback-appender + AOP audit** | Health, métricas Prometheus, logs en Loki, dashboard Grafana, auditoría de WS (Entrega 3) |
 | Testing | **JUnit 5, Mockito, AssertJ, Spring Test, Rest Assured, ArchUnit** | Unit (Surefire) + e2e/integration (Failsafe con H2); test de arquitectura (Entrega 3) |
 | CI | **GitHub Actions** | Build, test, Jacoco, SonarCloud, deploy |
 | Deploy | **Render** (Docker runtime + Postgres managed) | Free tier con GitHub integration |
@@ -457,7 +457,25 @@ management.metrics.distribution.percentiles-histogram:
   quotes.recalculation.duration: true
 ```
 
-Stack de monitoreo en `docker-compose.monitoring.yml` (Prometheus + Grafana). Dashboard provisionado en `monitoring/grafana/provisioning/dashboards/bolsa-dashboard.json` con 8 paneles. Prometheus scrapeado desde `host.docker.internal:8080`.
+Stack de monitoreo en `docker-compose.monitoring.yml` (Prometheus + Grafana + Loki). Dashboard provisionado en `monitoring/grafana/provisioning/dashboards/bolsa-dashboard.json` con 11 paneles. Prometheus scrapeado desde `host.docker.internal:8080` (en Linux requiere `extra_hosts: host-gateway` — ya configurado).
+
+### Loki — logs centralizados
+
+Loki corre en el stack de monitoring (`grafana/loki:2.9.8`, puerto 3100). La app pushea logs directamente con `loki-logback-appender` (`com.github.loki4j:loki-logback-appender:1.5.2`), configurado en `logback-spring.xml` solo en perfil `local`.
+
+Labels enviados: `app=bolsa-de-jugadores`, `level=%level`, `logger=%logger{20}`.
+
+Dashboard incluye 3 panels de Loki: logs generales, logs de auditoría (`logger=~"audit.*"`), rate de errores por minuto.
+
+Explorar en Grafana → **Explore** → datasource **Loki**:
+```logql
+{app="bolsa-de-jugadores"}
+{app="bolsa-de-jugadores", level="ERROR"}
+{app="bolsa-de-jugadores", logger=~"audit.*"}
+{app="bolsa-de-jugadores"} |= "OrderService"
+```
+
+Config de Loki en `monitoring/loki/local-config.yaml`. Datasources provisionados con UIDs explícitos (`uid: prometheus`, `uid: loki`) para que los panels del dashboard los referencien sin ambigüedad.
 
 ---
 
@@ -581,7 +599,7 @@ Rutas públicas:
 
 ## 17. Estado actual del proyecto
 
-**Última actualización:** 2026-06-30
+**Última actualización:** 2026-07-01
 
 | Issue | Título | Estado |
 |---|---|---|
@@ -607,6 +625,7 @@ Rutas públicas:
 | #51 | Auditoría AOP de Web Services | 🔄 En progreso — `feature/audit-ws-e3` (pendiente merge a `develop`) |
 | #53 | Prometheus + Actuator | 🔄 En progreso — `feature/audit-ws-e3` (pendiente merge a `develop`) |
 | #54 | Caché Redis para ranking | 🔄 En progreso — `feature/audit-ws-e3` (ranking cacheado + pre-warming; pendiente merge) |
+| —  | Stack Loki + fix host.docker.internal | ✅ Configurado (2026-07-01) — ver §12 |
 
 **Entrega 1 completada:** Todos los issues de E1 están mergeados en `develop` y en `main`. Tag v1.0.0 creado el 2026-06-01. Release publicado en GitHub: https://github.com/dddaavo/dapp-bolsa-de-jugadores/releases/tag/v1.0.0
 
@@ -816,6 +835,26 @@ Recién después de ese commit el dev mergea el PR a `develop` y cierra el issue
 ---
 
 ## 21. Gotchas descubiertos
+
+### host.docker.internal no resuelve en Linux nativo
+
+En Docker Desktop (Mac/Windows) `host.docker.internal` resuelve automáticamente al host. En Linux con Docker Engine nativo **no resuelve**, por lo que Prometheus no puede scrapear la app y Grafana muestra "No data".
+
+**Fix:** agregar `extra_hosts` al servicio que necesita acceder al host:
+```yaml
+extra_hosts:
+  - "host.docker.internal:host-gateway"
+```
+Ya configurado en `docker-compose.monitoring.yml` para el servicio `prometheus`.
+
+### Grafana no carga nuevos datasources tras actualizar provisioning
+
+Si el volumen `grafana_data` tiene estado anterior (datasources viejos), reiniciar el contenedor de Grafana no siempre aplica los cambios del provisioning. Si tras `docker compose restart grafana` el datasource Loki no aparece, borrar el volumen:
+```bash
+docker compose -f docker-compose.monitoring.yml down
+docker volume rm dapp-bolsa-de-jugadores_grafana_data
+docker compose -f docker-compose.monitoring.yml up -d
+```
 
 ### gh CLI — errores GraphQL por deprecation de Projects (classic)
 

@@ -13,7 +13,7 @@ Trabajo Práctico — Desarrollo de Aplicaciones, UNQ.
 - Spring Security 6 + JWT (jjwt 0.12)
 - Redis 7 — caché distribuida del ranking de jugadores
 - OpenAPI 3 / Swagger UI · springdoc 2.5
-- Prometheus + Grafana — métricas y dashboard de observabilidad
+- Prometheus + Grafana + Loki — métricas, dashboard y logs de observabilidad
 - AOP audit — log de cada request HTTP con usuario, operación y duración
 - Playwright Java — scraping WhoScored (datos de jugadores)
 
@@ -93,20 +93,21 @@ Importar `postman/bolsa-de-jugadores.postman_collection.json` en Postman. La var
 
 ## Stack de monitoreo (opcional)
 
-Prometheus + Grafana para métricas de la app en tiempo real.
+Prometheus + Grafana + Loki para métricas y logs de la app en tiempo real.
 
 ```bash
 # Levantar (requiere la app corriendo en localhost:8080)
-docker-compose -f docker-compose.monitoring.yml up -d
+docker compose -f docker-compose.monitoring.yml up -d
 
 # Bajar
-docker-compose -f docker-compose.monitoring.yml down
+docker compose -f docker-compose.monitoring.yml down
 ```
 
 | Servicio | URL | Credenciales |
 |---|---|---|
 | Grafana | http://localhost:3000 | admin / admin |
 | Prometheus | http://localhost:9090 | — |
+| Loki | http://localhost:3100 | — |
 | Métricas raw | http://localhost:8080/actuator/prometheus | público |
 
 El dashboard **"Bolsa de Jugadores"** se provisiona automáticamente en Grafana con paneles de:
@@ -114,6 +115,31 @@ El dashboard **"Bolsa de Jugadores"** se provisiona automáticamente en Grafana 
 - Órdenes de compra/venta (total, rate por tipo)
 - Latencia HTTP p99
 - Heap JVM
+- Logs de la aplicación (vía Loki)
+- Logs de auditoría (vía Loki)
+- Rate de errores por minuto (vía Loki)
+
+> **Linux:** si Docker da permission denied: `sudo usermod -aG docker $USER` y reiniciar sesión.
+
+### Explorar logs en Grafana
+
+Grafana → **Explore** → datasource **Loki**:
+
+```logql
+# Todos los logs
+{app="bolsa-de-jugadores"}
+
+# Solo errores
+{app="bolsa-de-jugadores", level="ERROR"}
+
+# Logs de auditoría
+{app="bolsa-de-jugadores", logger=~"audit.*"}
+
+# Buscar texto
+{app="bolsa-de-jugadores"} |= "OrderService"
+```
+
+La app envía logs a Loki directamente via `loki-logback-appender` (solo en perfil `local`).
 
 ## Audit logs
 

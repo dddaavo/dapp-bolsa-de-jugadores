@@ -14,9 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
@@ -64,11 +62,11 @@ class WebServiceAuditAspectTest {
 
         aspect.audit(pjp);
 
-        String log = singleLog();
-        assertThat(log).contains("user=");
-        assertThat(log).contains("operation=PlayerController.list()");
-        assertThat(log).contains("params=");
-        assertThat(log).contains("durationMs=");
+        assertThat(singleLog())
+                .contains("user=")
+                .contains("operation=PlayerController.list()")
+                .contains("params=")
+                .contains("durationMs=");
     }
 
     @Test
@@ -108,9 +106,9 @@ class WebServiceAuditAspectTest {
 
         aspect.audit(pjp);
 
-        String log = singleLog();
-        assertThat(log).doesNotContain("s3cr3t!");
-        assertThat(log).contains("[PROTECTED:LoginRequest]");
+        assertThat(singleLog())
+                .doesNotContain("s3cr3t!")
+                .contains("[PROTECTED:LoginRequest]");
     }
 
     @Test
@@ -122,9 +120,9 @@ class WebServiceAuditAspectTest {
 
         aspect.audit(pjp);
 
-        String log = singleLog();
-        assertThat(log).doesNotContain("myPass123");
-        assertThat(log).contains("[PROTECTED:RegisterRequest]");
+        assertThat(singleLog())
+                .doesNotContain("myPass123")
+                .contains("[PROTECTED:RegisterRequest]");
     }
 
     @Test
@@ -136,9 +134,9 @@ class WebServiceAuditAspectTest {
 
         aspect.audit(pjp);
 
-        String log = singleLog();
-        assertThat(log).doesNotContain("eyJhbGciOiJIUzI1NiJ9");
-        assertThat(log).contains("[PROTECTED:token]");
+        assertThat(singleLog())
+                .doesNotContain("eyJhbGciOiJIUzI1NiJ9")
+                .contains("[PROTECTED:token]");
     }
 
     private String singleLog() {

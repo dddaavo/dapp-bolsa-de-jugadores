@@ -48,16 +48,20 @@ public class StrategyConfigService {
 
     @Transactional(readOnly = true)
     public PricingStrategy buildStrategy(String name) {
-        return configRepository.findByName(name)
-                .filter(StrategyConfig::isActive)
-                .map(config -> buildFromJson(name, config.getWeightsJson(), "v1." + config.getConfigVersion()))
-                .orElseGet(() -> strategyRegistry.get(name).orElseGet(strategyRegistry::getDefault));
+        return findAndBuildStrategy(name);
     }
 
     @Transactional(readOnly = true)
     public PricingStrategy buildDefaultStrategy() {
         String defaultName = strategyRegistry.getDefault().name();
-        return buildStrategy(defaultName);
+        return findAndBuildStrategy(defaultName);
+    }
+
+    private PricingStrategy findAndBuildStrategy(String name) {
+        return configRepository.findByName(name)
+                .filter(StrategyConfig::isActive)
+                .map(config -> buildFromJson(name, config.getWeightsJson(), "v1." + config.getConfigVersion()))
+                .orElseGet(() -> strategyRegistry.get(name).orElseGet(strategyRegistry::getDefault));
     }
 
     private void validateWeightsJson(String name, String weightsJson) {

@@ -28,11 +28,11 @@ Backend REST en Java/Spring Boot que modela un mercado de tokens de jugadores de
 | HTTP client | **Spring `RestClient`** (Spring 6.1+) | Sync, fluent, reemplazo moderno de RestTemplate |
 | Resiliencia | **Resilience4j** (circuit breaker + retry + bulkhead) | Tolerancia a fallas del proveedor externo |
 | Scraping | **Playwright Java** (Chromium headless) | WhoScored usa Cloudflare + JS rendering; Jsoup no funciona (declarado en pom.xml pero sin uso real) |
-| Caché | **Redis** (Spring Cache abstraction) | **Distribuida** — coherente bajo escalado horizontal (N instancias). Caffeine (in-process) daría una copia por nodo e inconsistencia; descartado. No implementada aún (issue #54) |
+| Caché | **Redis** (Spring Cache abstraction) | **Distribuida** — coherente bajo escalado horizontal (N instancias). Caffeine (in-process) daría una copia por nodo e inconsistencia; descartado. Implementada para ranking (issue #54 parcial) |
 | Scheduler | **Spring `@Scheduled`** (+ **ShedLock** si escalamos a N>1 instancias) | Cotización semanal, sync externo |
 | Mapeo | **MapStruct** | DTO ↔ Entity en compile-time, sin reflection |
 | Validación | **Jakarta Bean Validation** (`spring-boot-starter-validation`) | `@Valid` en controllers |
-| Observabilidad | **Actuator + Micrometer + Prometheus + Logback (JSON) + AOP audit** | Health, métricas Prometheus, logs estructurados, auditoría de WS (Entrega 3) |
+| Observabilidad | **Actuator + Micrometer + Prometheus + Loki + Grafana + loki-logback-appender + AOP audit** | Health, métricas Prometheus, logs en Loki, dashboard Grafana, auditoría de WS (Entrega 3) |
 | Testing | **JUnit 5, Mockito, AssertJ, Spring Test, Rest Assured, ArchUnit** | Unit (Surefire) + e2e/integration (Failsafe con H2); test de arquitectura (Entrega 3) |
 | CI | **GitHub Actions** | Build, test, Jacoco, SonarCloud, deploy |
 | Deploy | **Render** (Docker runtime + Postgres managed) | Free tier con GitHub integration |
@@ -425,18 +425,57 @@ Configuración en `StrategyConfig` (JSON en columna TEXT — no JSONB, incompati
 
 ## 12. Observabilidad
 
-### AOP audit (Entrega 3)
+### AOP audit (implementado en feature/audit-ws-e3)
+
+`WebServiceAuditAspect` en `shared/audit/` intercepta todos los `@RestController`:
 
 ```java
 @Around("within(@org.springframework.web.bind.annotation.RestController *)")
 public Object audit(ProceedingJoinPoint pjp) throws Throwable { ... }
 ```
 
-Loguear: `timestamp | user | operación | parámetros | tiempoDeEjecución(ms)`. No loguear passwords ni tokens JWT.
+Loguea: `user=`, `operation=`, `params=`, `durationMs=` (y `error=` si lanza excepción). Passwords y tokens JWT se enmascaran (`[PROTECTED:LoginRequest]`, `[PROTECTED:token]`).
 
-### Prometheus (Entrega 3)
+Logger nombrado `"audit"` (SLF4J string, no paquete). Configurado en `logback-spring.xml`:
+- Perfil `local`: consola + `logs/audit.log` (rotación diaria, 7 días)
+- Resto de perfiles: solo consola
 
-Exponer `/actuator/prometheus`. Métricas custom: contador de órdenes, duración de recalc, errores de adapters.
+**Gotcha:** `logging.level.com.unq.dapp.bolsa: DEBUG` no cubre el logger `"audit"` porque es un nombre string, no un paquete. Necesita `logging.level.audit: INFO` explícito en el yml del perfil.
+
+### Prometheus + Grafana (implementado en feature/audit-ws-e3)
+
+`/actuator/prometheus` expuesto como ruta pública (sin auth) para que Prometheus pueda scrapearlo.
+
+Métricas custom implementadas:
+- `orders_total{type=buy|sell}` — contador de órdenes (Micrometer Counter)
+- `quotes_recalculation_duration` — duración de recalculación (Micrometer Timer)
+
+Histogramas percentil habilitados en `application.yml`:
+```yaml
+management.metrics.distribution.percentiles-histogram:
+  http.server.requests: true
+  quotes.recalculation.duration: true
+```
+
+Stack de monitoreo en `docker-compose.monitoring.yml` (Prometheus + Grafana + Loki). Dashboard provisionado en `monitoring/grafana/provisioning/dashboards/bolsa-dashboard.json` con 11 paneles. Prometheus scrapeado desde `host.docker.internal:8080` (en Linux requiere `extra_hosts: host-gateway` — ya configurado).
+
+### Loki — logs centralizados
+
+Loki corre en el stack de monitoring (`grafana/loki:2.9.8`, puerto 3100). La app pushea logs directamente con `loki-logback-appender` (`com.github.loki4j:loki-logback-appender:1.5.2`), configurado en `logback-spring.xml` solo en perfil `local`.
+
+Labels enviados: `app=bolsa-de-jugadores`, `level=%level`, `logger=%logger{20}`.
+
+Dashboard incluye 3 panels de Loki: logs generales, logs de auditoría (`logger=~"audit.*"`), rate de errores por minuto.
+
+Explorar en Grafana → **Explore** → datasource **Loki**:
+```logql
+{app="bolsa-de-jugadores"}
+{app="bolsa-de-jugadores", level="ERROR"}
+{app="bolsa-de-jugadores", logger=~"audit.*"}
+{app="bolsa-de-jugadores"} |= "OrderService"
+```
+
+Config de Loki en `monitoring/loki/local-config.yaml`. Datasources provisionados con UIDs explícitos (`uid: prometheus`, `uid: loki`) para que los panels del dashboard los referencien sin ambigüedad.
 
 ---
 
@@ -479,12 +518,12 @@ Exponer `/actuator/prometheus`. Métricas custom: contador de órdenes, duració
 
 **Core (consigna):**
 - [ ] Test de arquitectura con ArchUnit — issue #52 (obligatorio desde E3, §15)
-- [ ] Auditoría de WS (AOP + logback): timestamp/user/método/params/tiempo — issue #51
-- [ ] Prometheus + Actuator (endpoints de monitoreo y métricas) — issue #53
+- [x] Auditoría de WS (AOP + logback): timestamp/user/método/params/tiempo — issue #51 ✅ (`feature/audit-ws-e3`, pendiente merge)
+- [x] Prometheus + Actuator (endpoints de monitoreo y métricas) — issue #53 ✅ (`feature/audit-ws-e3`, pendiente merge)
 - [ ] TAG + `RELEASE-NOTES.txt` (ver convención §8) — issue #57
 
 **Funcionalidad (consigna):**
-- [ ] Optimizar ranking para alta frecuencia → **caché distribuida Redis** — issue #54
+- [x] Optimizar ranking para alta frecuencia → **caché distribuida Redis** — issue #54 ✅ (ranking cacheado con Redis + pre-warming post-recalculate; pendiente merge en `feature/audit-ws-e3`)
 - [ ] Endpoint de métricas avanzadas (interpretación a definir) — issue #55
 
 **Requisitos del enunciado + arquitectura (E3):**
@@ -545,7 +584,8 @@ Rutas públicas:
 - `/auth/**`
 - `/swagger-ui/**`, `/swagger-ui.html`
 - `/v3/api-docs/**`
-- `/actuator/health`
+- `/actuator/health`, `/actuator/health/**`
+- `/actuator/prometheus` ← agregado en E3 para que Prometheus scrapeé sin auth
 - `/h2-console/**`
 
 **Gotcha crítico:** Spring Security 6 stateless sin `AuthenticationEntryPoint` explícito retorna **403** (no 401) para requests sin token. Siempre agregar:
@@ -559,7 +599,7 @@ Rutas públicas:
 
 ## 17. Estado actual del proyecto
 
-**Última actualización:** 2026-06-28
+**Última actualización:** 2026-07-01
 
 | Issue | Título | Estado |
 |---|---|---|
@@ -582,6 +622,10 @@ Rutas públicas:
 | #58 | Portfolio del usuario (GET /users/{id}/portfolio) | ✅ Mergeado a `develop` (PR #66, #67) |
 | #62 | Estrategias configurables (StrategyConfig persistida) | ✅ Mergeado a `develop` (PR #67) |
 | #50 | Cierre E2: RELEASE-NOTES.txt + tag v2.0.0 | ✅ RELEASE-NOTES.txt en feature/release-e2; tag v2.0.0 pendiente |
+| #51 | Auditoría AOP de Web Services | 🔄 En progreso — `feature/audit-ws-e3` (pendiente merge a `develop`) |
+| #53 | Prometheus + Actuator | 🔄 En progreso — `feature/audit-ws-e3` (pendiente merge a `develop`) |
+| #54 | Caché Redis para ranking | 🔄 En progreso — `feature/audit-ws-e3` (ranking cacheado + pre-warming; pendiente merge) |
+| —  | Stack Loki + fix host.docker.internal | ✅ Configurado (2026-07-01) — ver §12 |
 
 **Entrega 1 completada:** Todos los issues de E1 están mergeados en `develop` y en `main`. Tag v1.0.0 creado el 2026-06-01. Release publicado en GitHub: https://github.com/dddaavo/dapp-bolsa-de-jugadores/releases/tag/v1.0.0
 
@@ -609,12 +653,14 @@ Rutas públicas:
 
 **Backlog abierto:**
 - **Entrega 2** (milestone `Entrega 2`): ✅ CERRADA
-- **Entrega 3** (milestone `Entrega 3`): #51 (auditoría AOP), #52 (ArchUnit), #53 (Prometheus+Actuator), #54 (caché Redis), #55 (métricas avanzadas), #61 (sync job WhoScored), #56 (escalado horizontal, opcional), #60 (deploy, opcional), #57 (cierre E3)
+- **Entrega 3** (milestone `Entrega 3`): #52 (ArchUnit), #55 (métricas avanzadas), #61 (sync job WhoScored), #56 (escalado horizontal, opcional), #60 (deploy, opcional), #57 (cierre E3)
+- **En progreso en `feature/audit-ws-e3`:** #51 (AOP audit ✅), #53 (Prometheus ✅), #54 (Redis cache ✅ parcial)
 - **#59 (Football-Data) cerrado** — WhoScored cumple §7; reabrir solo si la cátedra exige una API REST.
 - Decisiones (sesión 2026-06-28): caché = Redis (#54); escalado #56 y deploy #60 = opcionales; #47 = endpoint point-in-time dedicado.
 
 **Ramas activas:**
 - `develop` — integración; base de las features
+- `feature/audit-ws-e3` — E3: AOP audit, Prometheus, Redis cache, Grafana dashboard (pendiente merge)
 - `entrega-1` — referencia del diseño original; **NO mergear**
 
 **`entrega-1` como código de referencia:**
@@ -702,6 +748,17 @@ La rama `entrega-1` contiene una implementación completa del proyecto en un ún
 - Tests unitarios: 51 tests en total para el módulo pricing (MoneyTest 14, MatchMetricsStrategyTest 6, QuoteServiceTest 5, QuoteRecalculationOrchestratorTest 6, QuoteRepositoryTest 7, StrategyWeightsTest 6, PricingContextTest 3, StrategyRegistryTest 5)
 - Cobertura del módulo pricing subió de 78.4% a ≥80% para satisfacer el Quality Gate personalizado
 
+**Decisiones tomadas en feature/audit-ws-e3 (2026-06-30):**
+- `WebServiceAuditAspect` ya existía implementado; el problema era que el logger nombrado `"audit"` no tenía nivel configurado. Fix: `logging.level.audit: INFO` en `application-local.yml` + `logback-spring.xml` explícito.
+- `logback-spring.xml` creado en `src/main/resources/` — usa `<springProfile>` para variar el comportamiento por perfil. En `local` escribe a `logs/audit.log` (rotación diaria). En otros perfiles solo consola.
+- `GenericJackson2JsonRedisSerializer` usa su propio `ObjectMapper` que no tiene `JavaTimeModule` registrado. Al cachear objetos con campos `Instant` (`AuditableEntity`) fallaba con `Java 8 date/time type not supported`. Fix: pasarle un `ObjectMapper` con `JavaTimeModule` + `NON_FINAL` typing en `CacheConfig`.
+- `/actuator/prometheus` requería auth por el wildcard `/actuator/**`. Agregado explícitamente a `permitAll()` antes del wildcard.
+- Tests `QuoteIT.deberiaRetornarRanking` era frágil — asumía que "Kylian Mbappé" estaba en el ranking, pero `DataInitializerIT` pre-calienta el cache sin ese jugador. Fix: verificar estructura de respuesta, no nombre específico.
+- Tests `ActuatorIT` tenían 2 tests que esperaban 401/403 en `/actuator/prometheus`; actualizados a 200.
+- Grafana provisiona dashboards desde JSON en `monitoring/grafana/provisioning/dashboards/`. Para forzar un reload sin reiniciar el contenedor, incrementar el campo `"version"` en el JSON.
+- Playwright falla con JDK 21 en macOS arm64 (error `Failed to create driver`). Funciona con JDK 25. La run configuration de IntelliJ usa JDK 25; el wrapper de Maven usa el `JAVA_HOME` del sistema (JDK 21). Los tests CI no usan Playwright (scraping desactivado).
+- `SPRING_PROFILES_ACTIVE=local` debe estar en las variables de entorno de la run configuration de IntelliJ, no solo como system property. Sin esto, la app levanta sin perfil y no levanta Redis ni scraping.
+
 ---
 
 ## 23. SonarCloud — Quality Gate personalizado
@@ -778,6 +835,26 @@ Recién después de ese commit el dev mergea el PR a `develop` y cierra el issue
 ---
 
 ## 21. Gotchas descubiertos
+
+### host.docker.internal no resuelve en Linux nativo
+
+En Docker Desktop (Mac/Windows) `host.docker.internal` resuelve automáticamente al host. En Linux con Docker Engine nativo **no resuelve**, por lo que Prometheus no puede scrapear la app y Grafana muestra "No data".
+
+**Fix:** agregar `extra_hosts` al servicio que necesita acceder al host:
+```yaml
+extra_hosts:
+  - "host.docker.internal:host-gateway"
+```
+Ya configurado en `docker-compose.monitoring.yml` para el servicio `prometheus`.
+
+### Grafana no carga nuevos datasources tras actualizar provisioning
+
+Si el volumen `grafana_data` tiene estado anterior (datasources viejos), reiniciar el contenedor de Grafana no siempre aplica los cambios del provisioning. Si tras `docker compose restart grafana` el datasource Loki no aparece, borrar el volumen:
+```bash
+docker compose -f docker-compose.monitoring.yml down
+docker volume rm dapp-bolsa-de-jugadores_grafana_data
+docker compose -f docker-compose.monitoring.yml up -d
+```
 
 ### gh CLI — errores GraphQL por deprecation de Projects (classic)
 

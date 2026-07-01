@@ -33,7 +33,7 @@ public class PortfolioService {
         List<TokenHolding> holdings = holdingRepository.findAllByUserId(userId);
 
         List<PositionResponse> positions = holdings.stream()
-                .map(h -> buildPosition(h))
+                .map(this::buildPosition)
                 .toList();
 
         BigDecimal totalInvested = positions.stream()

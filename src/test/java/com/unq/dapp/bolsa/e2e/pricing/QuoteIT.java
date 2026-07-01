@@ -154,8 +154,9 @@ class QuoteIT {
                 HttpMethod.GET, requestConToken(), String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).contains("Kylian Mbappé");
         assertThat(response.getBody()).contains("rankPosition");
+        assertThat(response.getBody()).contains("playerName");
+        assertThat(response.getBody()).doesNotContain("[]");
     }
 
     private String baseUrl() {

@@ -24,7 +24,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,8 +49,8 @@ class MarketMetricsServiceTest {
         MarketMetricsResponse result = service.getMarketMetrics();
 
         assertThat(result.totalOrders()).isEqualTo(120L);
-        assertThat(result.ordersByType().get("compras")).isEqualTo(80L);
-        assertThat(result.ordersByType().get("ventas")).isEqualTo(40L);
+        assertThat(result.ordersByType()).containsEntry("compras", 80L);
+        assertThat(result.ordersByType()).containsEntry("ventas", 40L);
     }
 
     @Test

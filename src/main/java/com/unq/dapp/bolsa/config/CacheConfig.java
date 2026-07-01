@@ -32,9 +32,16 @@ public class CacheConfig implements CachingConfigurer {
         ObjectMapper om = new ObjectMapper();
         om.registerModule(new JavaTimeModule());
         om.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        // Permite los tipos del dominio + los tipos JDK que efectivamente se cachean
+        // (colecciones, fechas, decimales, wrappers). NO usa un validador permisivo:
+        // sigue bloqueando clases arbitrarias, evitando el riesgo de deserialización.
         om.activateDefaultTyping(
                 BasicPolymorphicTypeValidator.builder()
                         .allowIfSubType("com.unq.dapp.bolsa")
+                        .allowIfSubType("java.util")
+                        .allowIfSubType("java.time")
+                        .allowIfSubType("java.math")
+                        .allowIfSubType("java.lang")
                         .build(),
                 ObjectMapper.DefaultTyping.NON_FINAL
         );

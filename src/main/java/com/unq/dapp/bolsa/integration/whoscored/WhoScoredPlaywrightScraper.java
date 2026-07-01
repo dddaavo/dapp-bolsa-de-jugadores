@@ -310,7 +310,7 @@ public class WhoScoredPlaywrightScraper implements WhoScoredScraper {
         try {
             ElementHandle td = row.querySelector("td." + colClass);
             if (td == null) return 0;
-            String text = td.innerText().trim().replaceAll("[^0-9]", "");
+            String text = td.innerText().trim().replaceAll("\\D", "");
             return text.isEmpty() ? 0 : Integer.parseInt(text);
         } catch (Exception e) {
             return 0;

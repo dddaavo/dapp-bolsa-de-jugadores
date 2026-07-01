@@ -110,7 +110,8 @@ class OrderServiceTest {
         stubInventory(5);
         when(orderRepository.findByIdempotencyKey(IDEMPOTENCY_KEY)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> orderService.buy(USER_ID, new BuyRequest(PLAYER_ID, 10), IDEMPOTENCY_KEY))
+        BuyRequest buyRequest = new BuyRequest(PLAYER_ID, 10);
+        assertThatThrownBy(() -> orderService.buy(USER_ID, buyRequest, IDEMPOTENCY_KEY))
                 .isInstanceOf(DomainException.class)
                 .hasFieldOrPropertyWithValue("errorCode", "INSUFFICIENT_STOCK");
     }
@@ -120,7 +121,8 @@ class OrderServiceTest {
         when(quoteService.getCurrentQuote(PLAYER_ID)).thenReturn(Optional.empty());
         when(orderRepository.findByIdempotencyKey(IDEMPOTENCY_KEY)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> orderService.buy(USER_ID, new BuyRequest(PLAYER_ID, 1), IDEMPOTENCY_KEY))
+        BuyRequest buyRequest = new BuyRequest(PLAYER_ID, 1);
+        assertThatThrownBy(() -> orderService.buy(USER_ID, buyRequest, IDEMPOTENCY_KEY))
                 .isInstanceOf(DomainException.class)
                 .hasFieldOrPropertyWithValue("errorCode", "NO_QUOTE");
     }
@@ -168,7 +170,8 @@ class OrderServiceTest {
         when(holdingRepository.findByUserIdAndPlayerId(USER_ID, PLAYER_ID)).thenReturn(Optional.of(holding));
         when(orderRepository.findByIdempotencyKey(IDEMPOTENCY_KEY)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> orderService.sell(USER_ID, new SellRequest(PLAYER_ID, 5), IDEMPOTENCY_KEY))
+        SellRequest sellRequest = new SellRequest(PLAYER_ID, 5);
+        assertThatThrownBy(() -> orderService.sell(USER_ID, sellRequest, IDEMPOTENCY_KEY))
                 .isInstanceOf(DomainException.class)
                 .hasFieldOrPropertyWithValue("errorCode", "INSUFFICIENT_HOLDING");
     }
@@ -179,7 +182,8 @@ class OrderServiceTest {
         when(holdingRepository.findByUserIdAndPlayerId(USER_ID, PLAYER_ID)).thenReturn(Optional.empty());
         when(orderRepository.findByIdempotencyKey(IDEMPOTENCY_KEY)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> orderService.sell(USER_ID, new SellRequest(PLAYER_ID, 1), IDEMPOTENCY_KEY))
+        SellRequest sellRequest = new SellRequest(PLAYER_ID, 1);
+        assertThatThrownBy(() -> orderService.sell(USER_ID, sellRequest, IDEMPOTENCY_KEY))
                 .isInstanceOf(DomainException.class)
                 .hasFieldOrPropertyWithValue("errorCode", "NO_HOLDING");
     }

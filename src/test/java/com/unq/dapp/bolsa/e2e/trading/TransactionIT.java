@@ -26,6 +26,7 @@ import org.springframework.test.context.ActiveProfiles;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +73,7 @@ class TransactionIT {
         Quote quote = new Quote();
         quote.setPlayerId(playerId);
         quote.setValue(new com.unq.dapp.bolsa.pricing.domain.Money(BigDecimal.valueOf(2.00), "CREDITS"));
-        quote.setCalculatedAt(LocalDateTime.of(2026, 1, 1, 12, 0));
+        quote.setCalculatedAt(LocalDateTime.of(2026, Month.JANUARY, 1, 12, 0));
         quote.setStrategyName("GlobalMetrics");
         quote.setStrategyVersion("v1.0");
         quoteRepository.save(quote);

@@ -94,7 +94,10 @@ public class QuoteRecalculationOrchestrator {
                 }
             }
 
-            String status = errors == 0 ? "complete" : (count == 0 ? "failed" : "partial");
+            String status;
+            if (errors == 0) status = "complete";
+            else if (count == 0) status = "failed";
+            else status = "partial";
             Counter.builder("quotes.recalculation.total")
                     .description("Cantidad de veces que se ejecutó recalculateAll")
                     .tag("strategy", resolvedName)

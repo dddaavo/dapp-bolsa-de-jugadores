@@ -30,15 +30,20 @@ public class WebServiceAuditAspect {
         String operation = pjp.getSignature().toShortString();
         String params = maskArgs(pjp.getArgs());
 
+        Throwable caught = null;
         try {
-            Object result = pjp.proceed();
-            long ms = (System.nanoTime() - start) / 1_000_000;
-            log.info("user={} operation={} params={} durationMs={}", user, operation, params, ms);
-            return result;
+            return pjp.proceed();
         } catch (Throwable ex) {
-            long ms = (System.nanoTime() - start) / 1_000_000;
-            log.info("user={} operation={} params={} durationMs={} error={}", user, operation, params, ms, ex.getClass().getSimpleName());
+            caught = ex;
             throw ex;
+        } finally {
+            long ms = (System.nanoTime() - start) / 1_000_000;
+            if (caught != null) {
+                log.info("user={} operation={} params={} durationMs={} error={}",
+                        user, operation, params, ms, caught.getClass().getSimpleName());
+            } else {
+                log.info("user={} operation={} params={} durationMs={}", user, operation, params, ms);
+            }
         }
     }
 

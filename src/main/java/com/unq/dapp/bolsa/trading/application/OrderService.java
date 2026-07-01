@@ -38,6 +38,8 @@ public class OrderService {
     private final TokenHoldingRepository holdingRepository;
     private final OrderRepository orderRepository;
     private final PlayerRepository playerRepository;
+    private static final String UNKNOWN_PLAYER = "Desconocido";
+
     private final Counter buyCounter;
     private final Counter sellCounter;
 
@@ -68,20 +70,20 @@ public class OrderService {
         Map<Long, String> playerNames = playerRepository.findAllById(playerIds).stream()
                 .collect(Collectors.toMap(Player::getId, Player::getName));
 
-        return orders.map(o -> TransactionResponse.from(o, playerNames.getOrDefault(o.getPlayerId(), "Desconocido")));
+        return orders.map(o -> TransactionResponse.from(o, playerNames.getOrDefault(o.getPlayerId(), UNKNOWN_PLAYER)));
     }
 
     @Transactional
     public OrderResponse buy(Long userId, BuyRequest request, String idempotencyKey) {
         return orderRepository.findByIdempotencyKey(idempotencyKey)
-                .map(o -> OrderResponse.from(o, playerRepository.findById(o.getPlayerId()).map(p -> p.getName()).orElse("Desconocido")))
+                .map(o -> OrderResponse.from(o, playerRepository.findById(o.getPlayerId()).map(Player::getName).orElse(UNKNOWN_PLAYER)))
                 .orElseGet(() -> executeBuy(userId, request, idempotencyKey));
     }
 
     @Transactional
     public OrderResponse sell(Long userId, SellRequest request, String idempotencyKey) {
         return orderRepository.findByIdempotencyKey(idempotencyKey)
-                .map(o -> OrderResponse.from(o, playerRepository.findById(o.getPlayerId()).map(p -> p.getName()).orElse("Desconocido")))
+                .map(o -> OrderResponse.from(o, playerRepository.findById(o.getPlayerId()).map(Player::getName).orElse(UNKNOWN_PLAYER)))
                 .orElseGet(() -> executeSell(userId, request, idempotencyKey));
     }
 
@@ -105,7 +107,7 @@ public class OrderService {
         buyCounter.increment();
 
         String playerName = playerRepository.findById(request.playerId())
-                .map(p -> p.getName()).orElse("Desconocido");
+                .map(Player::getName).orElse(UNKNOWN_PLAYER);
         return OrderResponse.from(order, playerName);
     }
 
@@ -134,7 +136,7 @@ public class OrderService {
         sellCounter.increment();
 
         String playerName = playerRepository.findById(request.playerId())
-                .map(p -> p.getName()).orElse("Desconocido");
+                .map(Player::getName).orElse(UNKNOWN_PLAYER);
         return OrderResponse.from(order, playerName);
     }
 

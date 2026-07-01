@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -74,7 +75,7 @@ class StrategyConfigServiceTest {
         when(configRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         UpdateStrategyWeightsRequest request = new UpdateStrategyWeightsRequest(
-                "{\"goals\":0.5,\"assists\":0.3,\"rating\":0.2}");
+                Map.of("goals", 0.5, "assists", 0.3, "rating", 0.2));
         StrategyConfigResponse response = service.updateWeights("GlobalMetrics", request);
 
         assertThat(response.version()).isEqualTo(1);
@@ -87,7 +88,7 @@ class StrategyConfigServiceTest {
         when(configRepository.findByName("GlobalMetrics")).thenReturn(Optional.of(config));
 
         UpdateStrategyWeightsRequest request = new UpdateStrategyWeightsRequest(
-                "{\"goals\":0.9,\"assists\":0.9,\"rating\":0.9}");
+                Map.of("goals", 0.9, "assists", 0.9, "rating", 0.9));
 
         assertThatThrownBy(() -> service.updateWeights("GlobalMetrics", request))
                 .isInstanceOf(IllegalArgumentException.class);

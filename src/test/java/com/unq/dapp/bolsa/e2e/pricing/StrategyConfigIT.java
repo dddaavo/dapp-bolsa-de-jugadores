@@ -54,10 +54,9 @@ class StrategyConfigIT {
 
     @Test
     void deberiaActualizarPesosConRolAdmin() {
-        String nuevoJson = "{\"goals\":0.5,\"assists\":0.3,\"rating\":0.2}";
-        Map<String, String> body = Map.of("weightsJson", nuevoJson);
+        Map<String, Object> body = Map.of("weights", Map.of("goals", 0.5, "assists", 0.3, "rating", 0.2));
 
-        HttpEntity<Map<String, String>> request = new HttpEntity<>(body, headersConToken(adminToken));
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headersConToken(adminToken));
         ResponseEntity<String> response = restTemplate.exchange(
                 baseUrl() + "/api/v1/strategies/GlobalMetrics/config",
                 HttpMethod.PUT, request, String.class);
@@ -69,8 +68,8 @@ class StrategyConfigIT {
 
     @Test
     void deberiaRetornar403SiNoEsAdmin() {
-        Map<String, String> body = Map.of("weightsJson", "{\"goals\":0.5,\"assists\":0.3,\"rating\":0.2}");
-        HttpEntity<Map<String, String>> request = new HttpEntity<>(body, headersConToken(userToken));
+        Map<String, Object> body = Map.of("weights", Map.of("goals", 0.5, "assists", 0.3, "rating", 0.2));
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headersConToken(userToken));
 
         ResponseEntity<String> response = restTemplate.exchange(
                 baseUrl() + "/api/v1/strategies/GlobalMetrics/config",

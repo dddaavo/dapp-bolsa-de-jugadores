@@ -40,8 +40,14 @@ public class StrategyConfigService {
     public StrategyConfigResponse updateWeights(String name, UpdateStrategyWeightsRequest request) {
         StrategyConfig config = configRepository.findByName(name)
                 .orElseThrow(() -> new IllegalArgumentException("Strategy config not found: " + name));
-        validateWeightsJson(name, request.weightsJson());
-        config.setWeightsJson(request.weightsJson());
+        String weightsJson;
+        try {
+            weightsJson = objectMapper.writeValueAsString(request.weights());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid weights: " + e.getMessage(), e);
+        }
+        validateWeightsJson(name, weightsJson);
+        config.setWeightsJson(weightsJson);
         config.setConfigVersion(config.getConfigVersion() + 1);
         return StrategyConfigResponse.from(configRepository.save(config));
     }

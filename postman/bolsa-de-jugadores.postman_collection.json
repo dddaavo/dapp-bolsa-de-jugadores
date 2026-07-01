@@ -487,7 +487,7 @@
             "url": "{{baseUrl}}/api/v1/strategies/GlobalMetrics/config",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"weightsJson\": \"{\\\"goals\\\":0.4,\\\"assists\\\":0.3,\\\"rating\\\":0.3}\"\n}"
+              "raw": "{\n  \"weights\": {\n    \"goals\": 0.4,\n    \"assists\": 0.3,\n    \"rating\": 0.3\n  }\n}"
             }
           }
         },
@@ -502,7 +502,7 @@
             "url": "{{baseUrl}}/api/v1/strategies/PositionMetrics/config",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"weightsJson\": \"{\\\"FW\\\":{\\\"goals\\\":0.6,\\\"assists\\\":0.3,\\\"rating\\\":0.1},\\\"MF\\\":{\\\"goals\\\":0.3,\\\"assists\\\":0.4,\\\"rating\\\":0.3},\\\"DF\\\":{\\\"goals\\\":0.1,\\\"assists\\\":0.2,\\\"rating\\\":0.7},\\\"GK\\\":{\\\"goals\\\":0.0,\\\"assists\\\":0.1,\\\"rating\\\":0.9}}\"\n}"
+              "raw": "{\n  \"weights\": {\n    \"FW\": { \"goals\": 0.6, \"assists\": 0.3, \"rating\": 0.1 },\n    \"MF\": { \"goals\": 0.3, \"assists\": 0.4, \"rating\": 0.3 },\n    \"DF\": { \"goals\": 0.1, \"assists\": 0.2, \"rating\": 0.7 },\n    \"GK\": { \"goals\": 0.0, \"assists\": 0.1, \"rating\": 0.9 }\n  }\n}"
             }
           }
         },
@@ -517,7 +517,7 @@
             "url": "{{baseUrl}}/api/v1/strategies/GlobalMetrics/config",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"weightsJson\": \"{\\\"goals\\\":0.4,\\\"assists\\\":0.3,\\\"rating\\\":0.3}\"\n}"
+              "raw": "{\n  \"weights\": {\n    \"goals\": 0.4,\n    \"assists\": 0.3,\n    \"rating\": 0.3\n  }\n}"
             }
           }
         }

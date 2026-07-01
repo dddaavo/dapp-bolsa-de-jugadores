@@ -17,13 +17,32 @@
             </encoder>
         </appender>
 
+        <!-- Loki: push de logs al servidor local de Loki (docker-compose.monitoring.yml) -->
+        <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+            <http>
+                <url>http://localhost:3100/loki/api/v1/push</url>
+            </http>
+            <format>
+                <label>
+                    <pattern>app=bolsa-de-jugadores,level=%level,logger=%logger{20}</pattern>
+                </label>
+                <message>
+                    <pattern>%d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n</pattern>
+                </message>
+            </format>
+            <!-- Si Loki no está disponible, no loguear el error (evita spam en consola) -->
+            <verbose>false</verbose>
+        </appender>
+
         <logger name="audit" level="INFO" additivity="false">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="AUDIT_FILE"/>
+            <appender-ref ref="LOKI"/>
         </logger>
 
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="LOKI"/>
         </root>
     </springProfile>
 

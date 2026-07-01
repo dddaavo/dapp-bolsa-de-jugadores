@@ -1,4 +1,32 @@
 --------------------------------------------------------------------
+ENTREGA 3 - 1.0
+--------------------------------------------------------------------
+NEW FEATURES (lo que están entregando y está funcionando):
+* Auditoría de Web-Services vía AOP: cada llamada a un endpoint REST loguea timestamp, usuario, operación/método, parámetros y tiempo de ejecución, enmascarando passwords y tokens JWT (logger 'audit')
+* Test de arquitectura con ArchUnit: 9 reglas que validan las capas (api no accede a infrastructure, dominio sin Spring, convenciones de nombres); corre en el build
+* Monitoreo con Prometheus + Actuator: /actuator/prometheus con metricas de negocio (orders_total, quotes_recalculation_total/duration), latencias HTTP con percentiles (p95/p99) y salud de JVM/DB; probes liveness/readiness habilitados
+* Stack de observabilidad con Grafana + Loki: dashboards de metricas y visualizacion/busqueda de logs y auditoria
+* Optimizacion del ranking para alta frecuencia mediante cache distribuida Redis: cache-aside con TTL, invalidacion al recalcular y degradacion elegante si Redis no esta disponible
+* Endpoint de metricas avanzadas del mercado: GET /api/v1/metrics/market (volumen de ordenes, capitalizacion, jugadores mas operados, top movers)
+* Job de sincronizacion de datos externos (ExternalDataSyncJob): refresca jugadores y metricas reales desde WhoScored de forma periodica, con tolerancia a fallas
+* Preparacion para escalado horizontal: aplicacion stateless (JWT), lock distribuido con ShedLock para que los jobs corran en una sola instancia, graceful shutdown y health probes
+* Empaquetado con Docker: perfil prod con PostgreSQL + Redis, docker-compose para el stack completo (app + Postgres + Redis) y stack de monitoreo (Prometheus + Grafana + Loki)
+* Cobertura de tests ampliada: unit tests del modulo trading y test de cache contra un Redis real (Testcontainers)
+
+NOTES (funcionalidad que falta, consideraciones especiales):
+* Integracion con API externa (requisito de integracion): se cumple con WhoScored (scraping con tolerancia a fallas; ante un fallo el sistema continua con los datos ya persistidos en la base). Football-Data.org no se implemento por no tener consumidor en el dominio
+* Escalado horizontal: es un diseno preparado (stateless + lock distribuido + probes); no se desplego una topologia multi-instancia con balanceador de cargas (alcance opcional)
+* Deploy: el docker-compose levanta el stack localmente; no hay despliegue en la nube (no es requisito de la catedra)
+* Persistencia: H2 in-memory en dev/test; PostgreSQL en el perfil prod
+* Scraping de WhoScored desactivado por defecto (WHOSCORED_SCRAPING_ENABLED=true lo activa; requiere Chrome). Durante el Mundial las ligas no tienen fixtures activos, por lo que el scraping puede devolver pocos o ningun jugador; el sistema tolera la falla
+
+KNOWN ISSUES (errores conocidos en funcionalidad terminada):
+* El endpoint /api/v1/metrics/market resuelve algunas agregaciones con multiples consultas (N+1) y sin cache; funciona correctamente pero no esta optimizado para alta frecuencia
+* /actuator/prometheus se expone de forma publica para permitir el scrape sin autenticacion; en un entorno productivo real convendria un puerto de management en red interna
+* Compra/venta usan optimistic locking (@Version) pero sin reintento automatico ante conflicto de concurrencia: el cliente recibiria un error y deberia reintentar
+* El perfil prod usa ddl-auto=update (Hibernate ajusta el esquema); en produccion real se recomienda validate + migraciones
+
+--------------------------------------------------------------------
 ENTREGA 2 - 1.0
 --------------------------------------------------------------------
 NEW FEATURES (lo que están entregando y está funcionando):

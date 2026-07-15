@@ -517,21 +517,21 @@ Config de Loki en `monitoring/loki/local-config.yaml`. Datasources provisionados
 > La consigna oficial de E3 (Core + Funcionalidad) NO incluye `portfolio` ni `mercado buy/sell` (eso es E2 según cátedra) ni la 2da estrategia (ya hecha en #31). E3 = observabilidad + ArchUnit + optimización de ranking + métricas avanzadas, más los requisitos del enunciado de integración externa.
 
 **Core (consigna):**
-- [ ] Test de arquitectura con ArchUnit — issue #52 (obligatorio desde E3, §15)
-- [x] Auditoría de WS (AOP + logback): timestamp/user/método/params/tiempo — issue #51 ✅ (`feature/audit-ws-e3`, pendiente merge)
-- [x] Prometheus + Actuator (endpoints de monitoreo y métricas) — issue #53 ✅ (`feature/audit-ws-e3`, pendiente merge)
-- [ ] TAG + `RELEASE-NOTES.txt` (ver convención §8) — issue #57
+- [x] Test de arquitectura con ArchUnit — issue #52 ✅ (9 reglas de capas + naming, corre en el build)
+- [x] Auditoría de WS (AOP + logback): timestamp/user/método/params/tiempo — issue #51 ✅ (enmascara passwords y JWT)
+- [x] Prometheus + Actuator (endpoints de monitoreo y métricas) — issue #53 ✅ (+ stack Grafana/Loki #82)
+- [ ] TAG + `RELEASE-NOTES.txt` (ver convención §8) — issue #57 (RELEASE-NOTES.txt agregado; tag `v3.0.0` pendiente de merge a `main`)
 
 **Funcionalidad (consigna):**
-- [x] Optimizar ranking para alta frecuencia → **caché distribuida Redis** — issue #54 ✅ (ranking cacheado con Redis + pre-warming post-recalculate; pendiente merge en `feature/audit-ws-e3`)
-- [ ] Endpoint de métricas avanzadas (interpretación a definir) — issue #55
+- [x] Optimizar ranking para alta frecuencia → **caché distribuida Redis** — issue #54 ✅ (cache-aside + pre-warming; fix de serialización + test Testcontainers #83)
+- [x] Endpoint de métricas avanzadas — issue #55 ✅ (`GET /api/v1/metrics/market`)
 
 **Requisitos del enunciado + arquitectura (E3):**
-- [x] Integración con API externa (§7) — **cubierto por WhoScored** (scraping + fallback = fuente externa con tolerancia a fallas). Football-Data #59 **cerrado** (sin consumidor en el dominio; reabrir solo si la cátedra exige una API REST)
-- [ ] Job de sincronización de datos externos (§4.5) — issue #61 (**sincroniza WhoScored**, no depende de #59)
-- [ ] Escalado horizontal N>1 (ShedLock, readiness, graceful shutdown) — issue #56 (**opcional/stretch**; lo habilita #54)
-- [ ] Deploy: perfil prod + Postgres + docker-compose + IaC/CD — issue #60 (**opcional**, no requisito de cátedra)
-- [ ] Tag `v3.0.0` (cierre)
+- [x] Integración con API externa (§7) — **cubierto por WhoScored** (scraping con tolerancia a fallas). Football-Data #59 **cerrado** (sin consumidor en el dominio)
+- [x] Job de sincronización de datos externos (§4.5) — issue #61 ✅ (**sincroniza WhoScored** con métricas reales)
+- [x] Escalado horizontal N>1 (ShedLock, readiness, graceful shutdown) — issue #56 ✅ (**opcional/stretch**, diseño preparado)
+- [x] Deploy: perfil prod + Postgres + docker-compose — issue #60 ✅ (**opcional**; docker-compose local, sin cloud)
+- [ ] Tag `v3.0.0` (cierre) — issue #57
 
 ### Distribución por entrega
 
@@ -653,7 +653,7 @@ Rutas públicas:
 
 **Backlog abierto:**
 - **Entrega 2** (milestone `Entrega 2`): ✅ CERRADA
-- **Entrega 3** (milestone `Entrega 3`): #52 (ArchUnit), #55 (métricas avanzadas), #61 (sync job WhoScored), #56 (escalado horizontal, opcional), #60 (deploy, opcional), #57 (cierre E3)
+- **Entrega 3** (milestone `Entrega 3`): ✅ CERRADA salvo #57 (cierre: `RELEASE-NOTES.txt` agregado, pendiente merge a `main` + tag `v3.0.0`). Resto de issues (#51-#56, #61) mergeados.
 - **En progreso en `feature/audit-ws-e3`:** #51 (AOP audit ✅), #53 (Prometheus ✅), #54 (Redis cache ✅ parcial)
 - **#59 (Football-Data) cerrado** — WhoScored cumple §7; reabrir solo si la cátedra exige una API REST.
 - Decisiones (sesión 2026-06-28): caché = Redis (#54); escalado #56 y deploy #60 = opcionales; #47 = endpoint point-in-time dedicado.

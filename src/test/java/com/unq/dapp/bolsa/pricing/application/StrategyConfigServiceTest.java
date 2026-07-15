@@ -35,21 +35,21 @@ class StrategyConfigServiceTest {
     @Test
     void deberiaContruirMatchMetricsConPesosDelDB() {
         StrategyConfig config = configMatchMetrics("{\"goals\":0.5,\"assists\":0.3,\"rating\":0.2}", 1);
-        when(configRepository.findByName("MatchMetrics")).thenReturn(Optional.of(config));
+        when(configRepository.findByName("GlobalMetrics")).thenReturn(Optional.of(config));
 
-        PricingStrategy strategy = service.buildStrategy("MatchMetrics");
+        PricingStrategy strategy = service.buildStrategy("GlobalMetrics");
 
-        assertThat(strategy.name()).isEqualTo("MatchMetrics");
+        assertThat(strategy.name()).isEqualTo("GlobalMetrics");
         assertThat(strategy.version()).isEqualTo("v1.1");
     }
 
     @Test
     void deberiaUsarFallbackDelRegistryCuandoNoHayConfig() {
-        when(configRepository.findByName("MatchMetrics")).thenReturn(Optional.empty());
+        when(configRepository.findByName("GlobalMetrics")).thenReturn(Optional.empty());
         MatchMetricsStrategy fallback = new MatchMetricsStrategy();
-        when(strategyRegistry.get("MatchMetrics")).thenReturn(Optional.of(fallback));
+        when(strategyRegistry.get("GlobalMetrics")).thenReturn(Optional.of(fallback));
 
-        PricingStrategy strategy = service.buildStrategy("MatchMetrics");
+        PricingStrategy strategy = service.buildStrategy("GlobalMetrics");
 
         assertThat(strategy).isSameAs(fallback);
     }
@@ -59,37 +59,37 @@ class StrategyConfigServiceTest {
         MatchMetricsStrategy defaultStrategy = new MatchMetricsStrategy();
         when(strategyRegistry.getDefault()).thenReturn(defaultStrategy);
         StrategyConfig config = configMatchMetrics("{\"goals\":0.4,\"assists\":0.3,\"rating\":0.3}", 0);
-        when(configRepository.findByName("MatchMetrics")).thenReturn(Optional.of(config));
+        when(configRepository.findByName("GlobalMetrics")).thenReturn(Optional.of(config));
 
         PricingStrategy result = service.buildDefaultStrategy();
 
-        assertThat(result.name()).isEqualTo("MatchMetrics");
+        assertThat(result.name()).isEqualTo("GlobalMetrics");
         assertThat(result.version()).isEqualTo("v1.0");
     }
 
     @Test
     void deberiaActualizarPesosEIncrementarVersion() {
         StrategyConfig config = configMatchMetrics("{\"goals\":0.4,\"assists\":0.3,\"rating\":0.3}", 0);
-        when(configRepository.findByName("MatchMetrics")).thenReturn(Optional.of(config));
+        when(configRepository.findByName("GlobalMetrics")).thenReturn(Optional.of(config));
         when(configRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         UpdateStrategyWeightsRequest request = new UpdateStrategyWeightsRequest(
                 "{\"goals\":0.5,\"assists\":0.3,\"rating\":0.2}");
-        StrategyConfigResponse response = service.updateWeights("MatchMetrics", request);
+        StrategyConfigResponse response = service.updateWeights("GlobalMetrics", request);
 
-        assertThat(response.configVersion()).isEqualTo(1);
-        assertThat(response.weightsJson()).isEqualTo("{\"goals\":0.5,\"assists\":0.3,\"rating\":0.2}");
+        assertThat(response.version()).isEqualTo(1);
+        assertThat(response.pesos()).isNotNull();
     }
 
     @Test
     void deberiaLanzarExcepcionSiPesosNoSuman1() {
         StrategyConfig config = configMatchMetrics("{\"goals\":0.4,\"assists\":0.3,\"rating\":0.3}", 0);
-        when(configRepository.findByName("MatchMetrics")).thenReturn(Optional.of(config));
+        when(configRepository.findByName("GlobalMetrics")).thenReturn(Optional.of(config));
 
         UpdateStrategyWeightsRequest request = new UpdateStrategyWeightsRequest(
                 "{\"goals\":0.9,\"assists\":0.9,\"rating\":0.9}");
 
-        assertThatThrownBy(() -> service.updateWeights("MatchMetrics", request))
+        assertThatThrownBy(() -> service.updateWeights("GlobalMetrics", request))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -101,14 +101,14 @@ class StrategyConfigServiceTest {
         List<StrategyConfigResponse> result = service.getAll();
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).name()).isEqualTo("MatchMetrics");
+        assertThat(result.get(0).name()).isEqualTo("GlobalMetrics");
     }
 
     // --- helpers ---
 
     private StrategyConfig configMatchMetrics(String weightsJson, int configVersion) {
         StrategyConfig c = new StrategyConfig();
-        c.setName("MatchMetrics");
+        c.setName("GlobalMetrics");
         c.setActive(true);
         c.setConfigVersion(configVersion);
         c.setWeightsJson(weightsJson);

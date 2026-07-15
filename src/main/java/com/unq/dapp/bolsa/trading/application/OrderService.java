@@ -15,6 +15,8 @@ import com.unq.dapp.bolsa.trading.domain.OrderType;
 import com.unq.dapp.bolsa.trading.domain.TokenHolding;
 import com.unq.dapp.bolsa.trading.infrastructure.OrderRepository;
 import com.unq.dapp.bolsa.trading.infrastructure.TokenHoldingRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -36,17 +38,24 @@ public class OrderService {
     private final TokenHoldingRepository holdingRepository;
     private final OrderRepository orderRepository;
     private final PlayerRepository playerRepository;
+    private static final String UNKNOWN_PLAYER = "Desconocido";
+
+    private final Counter buyCounter;
+    private final Counter sellCounter;
 
     public OrderService(QuoteService quoteService,
                         PlayerTokenInventoryRepository inventoryRepository,
                         TokenHoldingRepository holdingRepository,
                         OrderRepository orderRepository,
-                        PlayerRepository playerRepository) {
+                        PlayerRepository playerRepository,
+                        MeterRegistry meterRegistry) {
         this.quoteService = quoteService;
         this.inventoryRepository = inventoryRepository;
         this.holdingRepository = holdingRepository;
         this.orderRepository = orderRepository;
         this.playerRepository = playerRepository;
+        this.buyCounter = Counter.builder("orders.total").tag("type", "buy").register(meterRegistry);
+        this.sellCounter = Counter.builder("orders.total").tag("type", "sell").register(meterRegistry);
     }
 
     @Transactional(readOnly = true)
@@ -61,20 +70,20 @@ public class OrderService {
         Map<Long, String> playerNames = playerRepository.findAllById(playerIds).stream()
                 .collect(Collectors.toMap(Player::getId, Player::getName));
 
-        return orders.map(o -> TransactionResponse.from(o, playerNames.getOrDefault(o.getPlayerId(), "Desconocido")));
+        return orders.map(o -> TransactionResponse.from(o, playerNames.getOrDefault(o.getPlayerId(), UNKNOWN_PLAYER)));
     }
 
     @Transactional
     public OrderResponse buy(Long userId, BuyRequest request, String idempotencyKey) {
         return orderRepository.findByIdempotencyKey(idempotencyKey)
-                .map(OrderResponse::from)
+                .map(o -> OrderResponse.from(o, playerRepository.findById(o.getPlayerId()).map(Player::getName).orElse(UNKNOWN_PLAYER)))
                 .orElseGet(() -> executeBuy(userId, request, idempotencyKey));
     }
 
     @Transactional
     public OrderResponse sell(Long userId, SellRequest request, String idempotencyKey) {
         return orderRepository.findByIdempotencyKey(idempotencyKey)
-                .map(OrderResponse::from)
+                .map(o -> OrderResponse.from(o, playerRepository.findById(o.getPlayerId()).map(Player::getName).orElse(UNKNOWN_PLAYER)))
                 .orElseGet(() -> executeSell(userId, request, idempotencyKey));
     }
 
@@ -95,8 +104,11 @@ public class OrderService {
 
         Order order = Order.createBuy(userId, request.playerId(), request.quantity(), unitPrice, idempotencyKey);
         orderRepository.save(order);
+        buyCounter.increment();
 
-        return OrderResponse.from(order);
+        String playerName = playerRepository.findById(request.playerId())
+                .map(Player::getName).orElse(UNKNOWN_PLAYER);
+        return OrderResponse.from(order, playerName);
     }
 
     private OrderResponse executeSell(Long userId, SellRequest request, String idempotencyKey) {
@@ -121,8 +133,11 @@ public class OrderService {
 
         Order order = Order.createSell(userId, request.playerId(), request.quantity(), unitPrice, idempotencyKey);
         orderRepository.save(order);
+        sellCounter.increment();
 
-        return OrderResponse.from(order);
+        String playerName = playerRepository.findById(request.playerId())
+                .map(Player::getName).orElse(UNKNOWN_PLAYER);
+        return OrderResponse.from(order, playerName);
     }
 
     private BigDecimal resolveCurrentPrice(Long playerId) {

@@ -26,7 +26,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.Month;
 import java.util.Map;
 import java.util.UUID;
 
@@ -68,8 +68,8 @@ class OrderIT {
         Quote quote = new Quote();
         quote.setPlayerId(playerId);
         quote.setValue(new com.unq.dapp.bolsa.pricing.domain.Money(BigDecimal.valueOf(1.85), "CREDITS"));
-        quote.setCalculatedAt(LocalDateTime.of(2026, 1, 1, 12, 0));
-        quote.setStrategyName("MatchMetrics");
+        quote.setCalculatedAt(LocalDateTime.of(2026, Month.JANUARY, 1, 12, 0));
+        quote.setStrategyName("GlobalMetrics");
         quote.setStrategyVersion("v1.0");
         quoteRepository.save(quote);
 

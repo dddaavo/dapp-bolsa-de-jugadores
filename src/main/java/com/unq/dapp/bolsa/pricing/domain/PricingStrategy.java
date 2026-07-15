@@ -7,7 +7,7 @@ package com.unq.dapp.bolsa.pricing.domain;
 public interface PricingStrategy {
 
     /**
-     * Nombre único de la estrategia (ej: "MatchMetrics")
+     * Nombre único de la estrategia (ej: "GlobalMetrics")
      */
     String name();
 

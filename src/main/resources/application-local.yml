@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:bolsadb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    url: jdbc:h2:file:./data/bolsadb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -9,16 +9,22 @@ spring:
       enabled: true
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     show-sql: false
 
 logging:
   level:
     com.unq.dapp.bolsa: DEBUG
+    audit: INFO
 
 # Activar scraping real de WhoScored solo en local (Playwright + Chromium headless)
 # Cambiar a true para obtener datos reales; false usa datos estáticos del fallback
 whoscored:
   scraping:
-    enabled: false
+    enabled: true
+
+management:
+  health:
+    redis:
+      enabled: false
 

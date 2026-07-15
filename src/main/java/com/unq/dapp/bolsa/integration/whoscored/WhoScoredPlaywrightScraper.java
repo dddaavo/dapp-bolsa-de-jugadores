@@ -290,7 +290,42 @@ public class WhoScoredPlaywrightScraper implements WhoScoredScraper {
             posText = raw.replaceAll("^[,\\s]+", "").trim();
         }
 
-        return new ScrapedPlayer(whoScoredId, name, team, mapPosition(posText), league, "");
+        // Métricas de la temporada — columnas con clase "col-{nombre}" en WhoScored
+        int goals        = parseStatCell(row, "col-goals");
+        int assists      = parseStatCell(row, "col-assists");
+        int apps         = parseStatCell(row, "col-apps");
+        int mins         = parseStatCell(row, "col-mins");
+        double rating    = parseStatCellDouble(row, "col-rating");
+
+        return new ScrapedPlayer(whoScoredId, name, team, mapPosition(posText), league, "",
+                goals, assists, apps, mins, rating);
+    }
+
+    /**
+     * Lee el valor numérico entero de una celda de estadística.
+     * WhoScored usa clases como "gc col-goals bold" — buscamos por la clase parcial.
+     * El valor puede estar directamente en el td o dentro de un span.
+     */
+    private int parseStatCell(ElementHandle row, String colClass) {
+        try {
+            ElementHandle td = row.querySelector("td." + colClass);
+            if (td == null) return 0;
+            String text = td.innerText().trim().replaceAll("\\D", "");
+            return text.isEmpty() ? 0 : Integer.parseInt(text);
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private double parseStatCellDouble(ElementHandle row, String colClass) {
+        try {
+            ElementHandle td = row.querySelector("td." + colClass);
+            if (td == null) return 0.0;
+            String text = td.innerText().trim().replaceAll("[^0-9.]", "");
+            return text.isEmpty() ? 0.0 : Double.parseDouble(text);
+        } catch (Exception e) {
+            return 0.0;
+        }
     }
 
     /**

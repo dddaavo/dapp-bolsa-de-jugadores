@@ -6,6 +6,7 @@ import com.unq.dapp.bolsa.pricing.domain.*;
 import com.unq.dapp.bolsa.pricing.infrastructure.PlayerMetricsSnapshotRepository;
 import com.unq.dapp.bolsa.pricing.infrastructure.PlayerTokenInventoryRepository;
 import com.unq.dapp.bolsa.pricing.infrastructure.QuoteRepository;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,6 +40,8 @@ class QuoteRecalculationOrchestratorTest {
     private StrategyRegistry strategyRegistry;
     @Mock
     private StrategyConfigService strategyConfigService;
+    @Mock
+    private QuoteService quoteService;
 
     private QuoteRecalculationOrchestrator orchestrator;
 
@@ -46,7 +49,8 @@ class QuoteRecalculationOrchestratorTest {
     void setUp() {
         orchestrator = new QuoteRecalculationOrchestrator(
                 playerRepository, metricsRepository, inventoryRepository,
-                quoteRepository, strategyRegistry, strategyConfigService
+                quoteRepository, strategyRegistry, strategyConfigService,
+                quoteService, new SimpleMeterRegistry()
         );
     }
 

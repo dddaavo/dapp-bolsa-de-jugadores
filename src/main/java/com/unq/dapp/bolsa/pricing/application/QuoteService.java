@@ -2,6 +2,7 @@ package com.unq.dapp.bolsa.pricing.application;
 
 import com.unq.dapp.bolsa.pricing.domain.Quote;
 import com.unq.dapp.bolsa.pricing.infrastructure.QuoteRepository;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,6 +62,7 @@ public class QuoteService {
         return quoteRepository.findByPlayerIdOrderByCalculatedAtDesc(playerId);
     }
 
+    @Cacheable(cacheNames = "ranking", key = "(#strategyName ?: 'default') + ':' + #limit")
     public List<Quote> getRankingQuotes(int limit, String strategyName) {
         var pageable = PageRequest.of(0, limit);
         if (strategyName != null && !strategyName.isBlank()) {

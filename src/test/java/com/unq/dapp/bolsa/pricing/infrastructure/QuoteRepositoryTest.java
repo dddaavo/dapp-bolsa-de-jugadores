@@ -43,7 +43,7 @@ class QuoteRepositoryTest {
         assertThat(found).isPresent();
         assertThat(found.get().getPlayerId()).isEqualTo(1L);
         assertThat(found.get().getValue().amount()).isEqualByComparingTo(Money.of(1.5).amount());
-        assertThat(found.get().getStrategyName()).isEqualTo("MatchMetrics");
+        assertThat(found.get().getStrategyName()).isEqualTo("GlobalMetrics");
     }
 
     @Test
@@ -138,7 +138,7 @@ class QuoteRepositoryTest {
         quote.setPlayerId(playerId);
         quote.setValue(value);
         quote.setCalculatedAt(calculatedAt);
-        quote.setStrategyName("MatchMetrics");
+        quote.setStrategyName("GlobalMetrics");
         quote.setStrategyVersion("v1.0");
         return quote;
     }

@@ -7,7 +7,7 @@ import java.util.Map;
 
 public class PositionWeightedStrategy implements PricingStrategy {
 
-    private static final String NAME = "PositionWeighted";
+    private static final String NAME = "PositionMetrics";
     private static final String DEFAULT_VERSION = "v1.0";
 
     private static final double MAX_GOALS = 30.0;

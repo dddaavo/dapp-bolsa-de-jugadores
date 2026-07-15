@@ -24,3 +24,12 @@ whoscored:
 quote:
   recalc:
     cron: "-"
+
+external:
+  sync:
+    cron: "-"
+
+management:
+  health:
+    redis:
+      enabled: false

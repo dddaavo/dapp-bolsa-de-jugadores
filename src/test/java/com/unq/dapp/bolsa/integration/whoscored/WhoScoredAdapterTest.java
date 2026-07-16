@@ -15,18 +15,20 @@ import static org.mockito.Mockito.when;
 class WhoScoredAdapterTest {
 
     @Test
-    void deberiaRetornarListaVaciaCuandoScrapingDesactivado() {
-        WhoScoredAdapter adapter = new WhoScoredAdapter(null, false);
+    void deberiaRetornarListaVaciaCuandoScrapingYSeedDesactivados() {
+        WhoScoredAdapter adapter = new WhoScoredAdapter(null, false, false);
 
         assertThat(adapter.fetchPlayersByLeague(League.PREMIER_LEAGUE)).isEmpty();
     }
 
     @Test
-    void deberiaRetornarListaVaciaParaTodasLasLigasCuandoScrapingDesactivado() {
-        WhoScoredAdapter adapter = new WhoScoredAdapter(null, false);
+    void deberiaRetornarSeedCuandoScrapingDesactivadoYSeedActivado() {
+        WhoScoredAdapter adapter = new WhoScoredAdapter(null, false, true);
 
         for (League league : League.values()) {
-            assertThat(adapter.fetchPlayersByLeague(league)).isEmpty();
+            assertThat(adapter.fetchPlayersByLeague(league))
+                    .as("seed para %s", league)
+                    .isNotEmpty();
         }
     }
 
@@ -35,7 +37,7 @@ class WhoScoredAdapterTest {
         WhoScoredScraper scraper = mock(WhoScoredScraper.class);
         ScrapedPlayer player = new ScrapedPlayer("1", "Erling Haaland", "Manchester City", Position.FW, League.PREMIER_LEAGUE, "");
         when(scraper.fetchPlayersByLeague(League.PREMIER_LEAGUE)).thenReturn(List.of(player));
-        WhoScoredAdapter adapter = new WhoScoredAdapter(scraper, true);
+        WhoScoredAdapter adapter = new WhoScoredAdapter(scraper, true, false);
 
         List<ScrapedPlayer> result = adapter.fetchPlayersByLeague(League.PREMIER_LEAGUE);
 
@@ -44,20 +46,29 @@ class WhoScoredAdapterTest {
     }
 
     @Test
-    void deberiaRetornarListaVaciaCuandoScrapingActivadoYScraperFalla() {
+    void deberiaCaerAlSeedCuandoScrapingFallaYSeedActivado() {
         WhoScoredScraper scraper = mock(WhoScoredScraper.class);
         when(scraper.fetchPlayersByLeague(any())).thenThrow(new RuntimeException("Chrome no disponible"));
-        WhoScoredAdapter adapter = new WhoScoredAdapter(scraper, true);
+        WhoScoredAdapter adapter = new WhoScoredAdapter(scraper, true, true);
+
+        assertThat(adapter.fetchPlayersByLeague(League.BUNDESLIGA)).isNotEmpty();
+    }
+
+    @Test
+    void deberiaRetornarVacioCuandoScrapingFallaYSeedDesactivado() {
+        WhoScoredScraper scraper = mock(WhoScoredScraper.class);
+        when(scraper.fetchPlayersByLeague(any())).thenThrow(new RuntimeException("Chrome no disponible"));
+        WhoScoredAdapter adapter = new WhoScoredAdapter(scraper, true, false);
 
         assertThat(adapter.fetchPlayersByLeague(League.BUNDESLIGA)).isEmpty();
     }
 
     @Test
-    void deberiaRetornarListaVaciaCuandoScrapingActivadoYScraperDevuelveVacio() {
+    void deberiaCaerAlSeedCuandoScraperDevuelveVacioYSeedActivado() {
         WhoScoredScraper scraper = mock(WhoScoredScraper.class);
         when(scraper.fetchPlayersByLeague(any())).thenReturn(List.of());
-        WhoScoredAdapter adapter = new WhoScoredAdapter(scraper, true);
+        WhoScoredAdapter adapter = new WhoScoredAdapter(scraper, true, true);
 
-        assertThat(adapter.fetchPlayersByLeague(League.LA_LIGA)).isEmpty();
+        assertThat(adapter.fetchPlayersByLeague(League.LA_LIGA)).isNotEmpty();
     }
 }

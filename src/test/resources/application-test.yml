@@ -28,6 +28,8 @@ logging:
 whoscored:
   scraping:
     enabled: false
+  seed:
+    enabled: false
 
 quote:
   recalc:

@@ -17,30 +17,40 @@ public class WhoScoredAdapter implements PlayerStatsPort {
 
     private final WhoScoredScraper scraper;
     private final boolean scrapingEnabled;
+    private final boolean seedEnabled;
 
     public WhoScoredAdapter(WhoScoredScraper scraper,
-                            @Value("${whoscored.scraping.enabled:false}") boolean scrapingEnabled) {
+                            @Value("${whoscored.scraping.enabled:false}") boolean scrapingEnabled,
+                            @Value("${whoscored.seed.enabled:true}") boolean seedEnabled) {
         this.scraper = scraper;
         this.scrapingEnabled = scrapingEnabled;
+        this.seedEnabled = seedEnabled;
     }
 
     @Override
     public List<ScrapedPlayer> fetchPlayersByLeague(League league) {
         if (!scrapingEnabled) {
-            log.debug("[WhoScoredAdapter] Scraping desactivado — omitiendo {}", league);
-            return List.of();
+            log.info("[WhoScoredAdapter] Scraping desactivado — usando seed estático para {}", league);
+            return seedOrEmpty(league);
         }
 
         log.info("[WhoScoredAdapter] Iniciando scraping para {}", league);
         try {
             List<ScrapedPlayer> players = scraper.fetchPlayersByLeague(league);
             if (players.isEmpty()) {
-                log.warn("[WhoScoredAdapter] Scraper devolvió 0 jugadores para {}", league);
+                log.warn("[WhoScoredAdapter] Scraper devolvió 0 jugadores para {} — usando seed estático", league);
+                return seedOrEmpty(league);
             }
             return players;
         } catch (Exception e) {
-            log.error("[WhoScoredAdapter] Error en scraping de {}: {}", league, e.getMessage());
-            return List.of();
+            log.error("[WhoScoredAdapter] Error en scraping de {}: {} — usando seed estático", league, e.getMessage());
+            return seedOrEmpty(league);
         }
+    }
+
+    // Fallback a datos locales (§7: tolerar fallas del proveedor y continuar con datos locales).
+    // Se puede desactivar con whoscored.seed.enabled=false (usado en los profiles de test).
+    private List<ScrapedPlayer> seedOrEmpty(League league) {
+        return seedEnabled ? StaticPlayerData.forLeague(league) : List.of();
     }
 }
